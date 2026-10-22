@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Club: Magos Famosos - Momentos Mágicos</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti Library -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0b132b; }
+    ::-webkit-scrollbar-thumb { background: #1c2d5a; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #d97706; }
+    
+    /* Card states styling */
+    .status-0 { background-color: #334155; color: #94a3b8; border-color: #475569; } /* Faltante (Gris) */
+    .status-1 { background-color: #15803d; color: #ffffff; border-color: #22c55e; } /* Obtenido (Verde) */
+    .status-2 { background-color: #6d28d9; color: #ffffff; border-color: #a855f7; } /* Duplicado (Morado) */
+    .status-3 { background-color: #b45309; color: #fef08a; border-color: #f59e0b; box-shadow: 0 0 10px rgba(245, 158, 11, 0.4); } /* Dorado Obtenido */
+
+    .gold-slot-border { border: 2px dashed #f59e0b !important; }
+    
+    /* Touch feedback styling */
+    .card-btn {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans bg-slate-950 text-slate-100 antialiased selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Header Navigation -->
+  <header class="bg-slate-900 border-b border-amber-500/20 sticky top-0 z-40 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo & Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-amber-500/20">
+            <i class="fa-solid fa-hat-wizard text-slate-950"></i>
+          </div>
+          <div>
+            <h1 class="font-cinzel text-lg sm:text-xl font-extrabold text-amber-400 tracking-wide flex items-center gap-2">
+              Club: Magos Famosos
+            </h1>
+            <p class="text-[11px] text-slate-400">
+              Momentos Mágicos • Intercambio de Cromos
+            </p>
+          </div>
+        </div>
+
+        <!-- Top Club Stats Summary Bar -->
+        <div class="hidden lg:flex items-center gap-6 text-xs bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-users text-amber-400"></i>
+            <span class="text-slate-400">Miembros:</span>
+            <strong id="header-stat-members" class="text-amber-300 font-bold">0/30</strong>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-chart-pie text-emerald-400"></i>
+            <span class="text-slate-400">Progreso Club:</span>
+            <strong id="header-stat-progress" class="text-emerald-300 font-bold">0%</strong>
+          </div>
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-right-left text-purple-400"></i>
+            <span class="text-slate-400">Duplicados Totales:</span>
+            <strong id="header-stat-duplicates" class="text-purple-300 font-bold">0</strong>
+          </div>
+        </div>
+
+        <!-- Right Side: Active Player Selector -->
+        <div class="flex items-center space-x-3">
+          <button onclick="openAddMemberModal()" class="px-2.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+            <i class="fa-solid fa-user-plus"></i> <span class="hidden sm:inline">+ Nuevo</span>
+          </button>
+          <div class="flex items-center space-x-2 bg-slate-800/90 px-3 py-1.5 rounded-lg border border-slate-700">
+            <i class="fa-solid fa-user text-amber-400 text-xs sm:text-sm"></i>
+            <select id="active-player-select" onchange="changeActivePlayer(this.value)" class="bg-transparent text-xs sm:text-sm font-semibold text-amber-300 focus:outline-none cursor-pointer max-w-[120px] sm:max-w-[160px] truncate">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Navigation Bar -->
+    <div class="bg-slate-950 border-t border-slate-800 px-4 py-2 flex justify-center gap-2 text-xs sm:text-sm font-semibold">
+      <button onclick="switchTab('club')" id="nav-club" class="px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30">
+        <i class="fa-solid fa-users"></i> <span>Panel del Club</span>
+      </button>
+      <button onclick="switchTab('album')" id="nav-album" class="px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <i class="fa-solid fa-book-open"></i> <span>Mi Álbum</span>
+      </button>
+      <button onclick="switchTab('optimizer')" id="nav-optimizer" class="px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span>Envíos Sugeridos</span>
+      </button>
+      <button onclick="switchTab('admin')" id="nav-admin" class="px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
+        <i class="fa-solid fa-shield-halved text-amber-400"></i> <span>Administración</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- TAB 1: PANEL DEL CLUB (VISTA PRINCIPAL) -->
+    <section id="tab-club" class="tab-content space-y-6">
+      
+      <!-- Club Banner -->
+      <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 rounded-2xl p-6 border border-amber-500/30 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="space-y-1 text-center sm:text-left">
+          <h2 class="font-cinzel text-2xl sm:text-3xl font-extrabold text-amber-400 tracking-wide">
+            Panel de Integrantes • Magos Famosos
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-300">
+            Resumen global de los 30 integrantes. Revisa cuándo actualizó por última vez cada miembro.
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+          <button onclick="openAddMemberModal()" class="flex-1 sm:flex-none px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2 text-xs cursor-pointer">
+            <i class="fa-solid fa-user-plus"></i> Agregar Integrante
+          </button>
+        </div>
+      </div>
+
+      <!-- Members Grid / Progress Table -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-slate-300">
+            <thead class="bg-slate-950 text-xs font-semibold uppercase text-slate-400 border-b border-slate-800">
+              <tr>
+                <th class="p-4">Integrante</th>
+                <th class="p-4 text-center">Progreso</th>
+                <th class="p-4 text-center">Faltantes</th>
+                <th class="p-4 text-center">Duplicados</th>
+                <th class="p-4 text-center">Dorados</th>
+                <th class="p-4 text-center">Última Actualización</th>
+                <th class="p-4 text-center">Envíos Hoy</th>
+                <th class="p-4 text-right">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="club-members-tbody" class="divide-y divide-slate-800/60">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: MI ÁLBUM / GESTOR DE CROMOS -->
+    <section id="tab-album" class="tab-content space-y-6 hidden">
+      
+      <!-- Top Player Banner & Statistics -->
+      <div class="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h2 id="album-player-name" class="font-cinzel text-2xl font-bold text-amber-400">---</h2>
+            <span id="album-last-updated" class="text-[11px] px-2.5 py-1 bg-slate-950 text-amber-300/80 border border-amber-500/30 rounded-lg flex items-center gap-1.5 font-semibold">
+              <i class="fa-solid fa-clock text-amber-400"></i> Actualizado: --
+            </span>
+            <button onclick="renameCurrentPlayer()" class="text-xs px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-pen text-amber-400"></i> Editar Nombre
+            </button>
+            <button onclick="resetWholeAlbum()" class="text-xs px-2.5 py-1.5 bg-red-950/60 hover:bg-red-900/80 text-red-300 rounded-lg border border-red-800/80 transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-rotate-left"></i> Reiniciar Álbum
+            </button>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Toque corto: Cambia estado • Mantener presionado (~0.5s): Regresa la casilla a Gris.
+          </p>
+        </div>
+
+        <!-- Legend & Quick Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-emerald-500/30 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-sm text-white">
+              <i class="fa-solid fa-check"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">Obtenidos</div>
+              <div id="stat-obtained" class="text-base font-bold text-emerald-400">0/135</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-purple-500/30 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-sm text-white">
+              <i class="fa-solid fa-copy"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">Duplicados</div>
+              <div id="stat-duplicates" class="text-base font-bold text-purple-400">0</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-amber-500/30 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-amber-600 flex items-center justify-center font-bold text-sm text-slate-950">
+              <i class="fa-solid fa-crown"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">Dorados</div>
+              <div id="stat-gold" class="text-base font-bold text-amber-400">0/18</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-700 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center font-bold text-sm text-slate-300">
+              <i class="fa-solid fa-circle-minus"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-semibold">Faltantes</div>
+              <div id="stat-missing" class="text-base font-bold text-slate-300">135</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Color Legend Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+        <span class="text-slate-300 font-medium">Leyenda de Colores:</span>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-2.5 py-1 rounded status-0 border font-semibold">Gris: Faltante</span>
+          <span class="px-2.5 py-1 rounded status-1 border font-semibold">Verde: Obtenido</span>
+          <span class="px-2.5 py-1 rounded status-2 border font-semibold">Morado: Duplicado</span>
+          <span class="px-2.5 py-1 rounded status-3 border font-semibold border-amber-500">Amarillo: Dorado</span>
+        </div>
+      </div>
+
+      <!-- 15 Sets Container (Compact Grid) -->
+      <div id="album-sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        <!-- Sets rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 3: OPTIMIZADOR DE ENVÍOS -->
+    <section id="tab-optimizer" class="tab-content space-y-6 hidden">
+      <div class="bg-slate-900 rounded-2xl p-6 border border-amber-500/30 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="font-cinzel text-2xl font-bold text-amber-400 flex items-center gap-2">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Envíos Sugeridos para <span id="opt-sender-name" class="text-amber-300">---</span>
+          </h2>
+          <p class="text-sm text-slate-300 mt-1">
+            Prioriza a compañeros a los que les faltan pocas cartas para cerrar un conjunto y ganar trofeos para el club.
+          </p>
+        </div>
+
+        <button onclick="calculateOptimizations()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl transition text-xs shrink-0 cursor-pointer">
+          <i class="fa-solid fa-rotate-right"></i> Recalcular Envíos
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-4">
+          <h3 class="font-cinzel text-lg font-bold text-slate-200">
+            <i class="fa-solid fa-paper-plane text-purple-400"></i> Cromos que puedes enviar hoy
+          </h3>
+          <div id="outgoing-recommendations" class="space-y-4">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <div class="space-y-4">
+          <h3 class="font-cinzel text-lg font-bold text-slate-200">
+            <i class="fa-solid fa-gift text-emerald-400"></i> Te pueden regalar
+          </h3>
+          <div id="incoming-recommendations" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: ADMINISTRACIÓN CON PIN Y LISTA DE MIEMBROS -->
+    <section id="tab-admin" class="tab-content space-y-6 hidden">
+      <div class="bg-slate-900 rounded-2xl p-6 border border-amber-500/30 shadow-xl space-y-6">
+        
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <h2 class="font-cinzel text-2xl font-bold text-amber-400 flex items-center gap-2">
+              <i class="fa-solid fa-shield-halved"></i> Administración del Club Magos Famosos
+            </h2>
+            <p class="text-sm text-slate-300 mt-1">
+              Administra los integrantes, elimina cuentas inactivas y controla los envíos diarios (3/3) con restablecimiento a la 1:00 PM (GMT-6).
+            </p>
+          </div>
+
+          <button onclick="openAddMemberModal()" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl shadow-lg transition text-xs flex items-center gap-2 shrink-0 cursor-pointer">
+            <i class="fa-solid fa-user-plus"></i> + Agregar Integrante
+          </button>
+        </div>
+
+        <!-- Members Management List with Send Counters next to Trash Icon -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-bold text-amber-400 uppercase tracking-wide flex items-center gap-2">
+            <i class="fa-solid fa-users-gear"></i> Lista de Miembros y Envíos Disponibles
+          </h3>
+
+          <div id="admin-members-list" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- Rendered dynamically with Send counter next to delete button -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CUSTOM MODAL: AGREGAR INTEGRANTE -->
+  <div id="modal-add-member" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-cinzel font-bold text-lg text-amber-400 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus"></i> Agregar Nuevo Integrante
+        </h3>
+        <button onclick="closeAddMemberModal()" class="text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs text-slate-300 font-semibold">Nombre del Jugador:</label>
+        <input type="text" id="new-member-name-input" placeholder="Ej: HERMIONE, HARRY 2" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-amber-300 focus:outline-none focus:border-amber-500 uppercase font-semibold">
+        <p id="modal-error-msg" class="text-xs text-red-400 font-medium hidden"></p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeAddMemberModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
+          Cancelar
+        </button>
+        <button onclick="submitAddMember()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition">
+          Guardar Integrante
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM MODAL: EDITAR NOMBRE -->
+  <div id="modal-rename-member" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-amber-500/40 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-cinzel font-bold text-lg text-amber-400 flex items-center gap-2">
+          <i class="fa-solid fa-pen"></i> Editar Nombre del Integrante
+        </h3>
+        <button onclick="closeRenameMemberModal()" class="text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-2">
+        <label class="text-xs text-slate-300 font-semibold">Nuevo Nombre:</label>
+        <input type="text" id="rename-member-name-input" placeholder="Ej: TAVO PRIME" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-amber-300 focus:outline-none focus:border-amber-500 uppercase font-semibold">
+        <p id="modal-rename-error-msg" class="text-xs text-red-400 font-medium hidden"></p>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-2">
+        <button onclick="closeRenameMemberModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition">
+          Cancelar
+        </button>
+        <button onclick="submitRenameMember()" class="px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition">
+          Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAND CELEBRATION MODAL (ALBUM COMPLETED) -->
+  <div id="modal-grand-celebration" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border-2 border-amber-400 rounded-3xl p-8 max-w-lg w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.5)] space-y-6 relative overflow-hidden">
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl"></div>
+
+      <div class="w-20 h-20 mx-auto rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-4xl font-extrabold shadow-lg shadow-amber-500/40 animate-bounce">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+
+      <div class="space-y-2">
+        <h2 class="font-cinzel text-3xl font-black text-amber-300 tracking-wider">
+          ¡ÁLBUM COMPLETADO!
+        </h2>
+        <p class="text-sm text-slate-300 font-medium">
+          ¡Felicidades, <strong id="celebration-player-name" class="text-amber-400">---</strong>! Has recolectado los <strong class="text-emerald-400">135 cromos</strong> y dominado la colección de Magos Famosos.
+        </p>
+      </div>
+
+      <div class="p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 text-xs text-amber-200/90 font-semibold space-y-1">
+        <div>🏆 Leyenda del Club Magos Famosos</div>
+        <div class="text-[11px] text-slate-400 font-normal">Tus trofeos aportan el máximo nivel al progreso del equipo.</div>
+      </div>
+
+      <button onclick="closeGrandCelebration()" class="w-full py-3 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black rounded-xl text-sm shadow-xl shadow-amber-500/30 transition transform hover:scale-105 cursor-pointer">
+        ¡CONTINUAR MÁGICAMENTE!
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL_SETS = 15;
+    const CARDS_PER_SET = 9;
+    const TOTAL_CARDS = TOTAL_SETS * CARDS_PER_SET;
+    const STORAGE_KEY = 'magos_famosos_v5_data';
+
+    // Helper for formatting timestamps
+    function getNowTimestamp() {
+      const d = new Date();
+      const dateStr = d.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
+      const timeStr = d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+      return `${dateStr}, ${timeStr}`;
+    }
+
+    // Gold Card Locations
+    function isGoldCardSlot(setNumber, cardIndex) {
+      if (setNumber === 7 && cardIndex === 8) return true;
+      if (setNumber >= 8 && setNumber <= 14 && (cardIndex === 7 || cardIndex === 8)) return true;
+      if (setNumber === 15 && (cardIndex === 6 || cardIndex === 7 || cardIndex === 8)) return true;
+      return false;
+    }
+
+    let clubState = {
+      activePlayerId: 'p1',
+      adminPin: '1234',
+      lastResetDate: '',
+      players: [
+        { id: 'p1', name: 'TAVO', sendsRemaining: 3, lastUpdated: getNowTimestamp(), album: generateEmptyAlbum() },
+        { id: 'p2', name: 'TAVO 2.0', sendsRemaining: 3, lastUpdated: getNowTimestamp(), album: generateEmptyAlbum() }
+      ]
+    };
+
+    function generateEmptyAlbum() {
+      const album = [];
+      for (let s = 1; s <= TOTAL_SETS; s++) {
+        album.push({ setNumber: s, cards: new Array(CARDS_PER_SET).fill(0) });
+      }
+      return album;
+    }
+
+    window.onload = function() {
+      loadState();
+      checkDailyResetGMT6();
+      renderApp();
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.players) {
+            clubState = parsed;
+            // Ensure back-compatibility for lastUpdated
+            clubState.players.forEach(p => {
+              if (!p.lastUpdated) p.lastUpdated = getNowTimestamp();
+            });
+          }
+        }
+      } catch (e) {
+        console.error("Error cargando datos", e);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(clubState));
+      } catch (e) {
+        console.error("Error guardando datos", e);
+      }
+    }
+
+    function markPlayerUpdated(player) {
+      if (player) {
+        player.lastUpdated = getNowTimestamp();
+      }
+    }
+
+    function checkDailyResetGMT6() {
+      const now = new Date();
+      const gmt6Offset = -6 * 60;
+      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const gmt6Date = new Date(utcTime + (gmt6Offset * 60000));
+
+      const year = gmt6Date.getFullYear();
+      const month = String(gmt6Date.getMonth() + 1).padStart(2, '0');
+      const day = String(gmt6Date.getDate()).padStart(2, '0');
+      const hours = gmt6Date.getHours();
+
+      const todayKey = `${year}-${month}-${day}`;
+
+      if (hours >= 13 && clubState.lastResetDate !== todayKey) {
+        clubState.players.forEach(p => p.sendsRemaining = 3);
+        clubState.lastResetDate = todayKey;
+        saveState();
+      }
+    }
+
+    function getActivePlayer() {
+      let player = clubState.players.find(p => p.id === clubState.activePlayerId);
+      if (!player && clubState.players.length > 0) {
+        player = clubState.players[0];
+        clubState.activePlayerId = player.id;
+      }
+      return player;
+    }
+
+    function renderApp() {
+      updatePlayerSelector();
+      updateHeaderStats();
+      renderClubTab();
+      renderAlbumTab();
+      renderAdminTab();
+      calculateOptimizations();
+    }
+
+    function updatePlayerSelector() {
+      const select = document.getElementById('active-player-select');
+      if (!select) return;
+      select.innerHTML = '';
+      clubState.players.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = p.name;
+        if (p.id === clubState.activePlayerId) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function changeActivePlayer(newId) {
+      clubState.activePlayerId = newId;
+      saveState();
+      renderApp();
+    }
+
+    function updateHeaderStats() {
+      document.getElementById('header-stat-members').innerText = `${clubState.players.length}/30`;
+
+      let totalCardsObtained = 0;
+      let totalDuplicates = 0;
+
+      clubState.players.forEach(p => {
+        p.album.forEach((setObj) => {
+          setObj.cards.forEach((val, cIdx) => {
+            const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+            if (isGold) {
+              if (val === 3) totalCardsObtained++;
+            } else {
+              if (val >= 1) totalCardsObtained++;
+              if (val === 2) totalDuplicates++;
+            }
+          });
+        });
+      });
+
+      const maxPossible = clubState.players.length * TOTAL_CARDS;
+      const globalPercent = maxPossible > 0 ? Math.round((totalCardsObtained / maxPossible) * 100) : 0;
+
+      document.getElementById('header-stat-progress').innerText = `${globalPercent}%`;
+      document.getElementById('header-stat-duplicates').innerText = totalDuplicates;
+    }
+
+    // TAB 1: PANEL DEL CLUB
+    function renderClubTab() {
+      const tbody = document.getElementById('club-members-tbody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      clubState.players.forEach(player => {
+        let obtained = 0, duplicates = 0, missing = 0, goldObtained = 0;
+
+        player.album.forEach(setObj => {
+          setObj.cards.forEach((val, cIdx) => {
+            const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+            if (isGold) {
+              if (val === 3) { obtained++; goldObtained++; }
+              else missing++;
+            } else {
+              if (val >= 1) obtained++;
+              if (val === 2) duplicates++;
+              if (val === 0) missing++;
+            }
+          });
+        });
+
+        const percent = Math.round((obtained / TOTAL_CARDS) * 100);
+        const sends = player.sendsRemaining ?? 3;
+        const lastUp = player.lastUpdated || 'Hace momento';
+
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-800/40 transition cursor-pointer';
+        tr.onclick = function() {
+          changeActivePlayer(player.id);
+          switchTab('album');
+        };
+
+        tr.innerHTML = `
+          <td class="p-4 font-bold text-amber-300 flex items-center gap-2">
+            ${player.id === clubState.activePlayerId ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
+            ${player.name}
+          </td>
+          <td class="p-4 text-center">
+            <div class="flex items-center justify-center gap-2">
+              <div class="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
+                <div class="bg-amber-500 h-full" style="width: ${percent}%"></div>
+              </div>
+              <span class="text-xs font-semibold">${percent}%</span>
+            </div>
+          </td>
+          <td class="p-4 text-center font-bold text-slate-300">${missing}</td>
+          <td class="p-4 text-center font-bold text-purple-400">${duplicates}</td>
+          <td class="p-4 text-center font-bold text-amber-400">${goldObtained}/18 ★</td>
+          <td class="p-4 text-center text-xs text-slate-400 font-medium">
+            <span class="bg-slate-950/80 px-2 py-1 rounded-md border border-slate-800 inline-flex items-center gap-1">
+              <i class="fa-solid fa-clock text-[10px] text-amber-400/80"></i> ${lastUp}
+            </span>
+          </td>
+          <td class="p-4 text-center">
+            <button onclick="event.stopPropagation(); togglePlayerSendCount('${player.id}');" title="Toca para descontar o restablecer envíos" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold border transition active:scale-95 cursor-pointer ${sends > 0 ? 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20' : 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20'}">
+              <i class="fa-solid fa-paper-plane text-[10px]"></i> ${sends}/3
+            </button>
+          </td>
+          <td class="p-4 text-right">
+            <button onclick="event.stopPropagation(); changeActivePlayer('${player.id}'); switchTab('album');" class="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded border border-slate-700 cursor-pointer">
+              Ver Álbum
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function togglePlayerSendCount(playerId) {
+      const player = clubState.players.find(p => p.id === playerId);
+      if (!player) return;
+      
+      let currentSends = player.sendsRemaining ?? 3;
+      if (currentSends > 0) {
+        player.sendsRemaining = currentSends - 1;
+      } else {
+        player.sendsRemaining = 3;
+      }
+      saveState();
+      renderApp();
+    }
+
+    // MODAL FUNCTIONS FOR ADDING MEMBER
+    function openAddMemberModal() {
+      const modal = document.getElementById('modal-add-member');
+      const input = document.getElementById('new-member-name-input');
+      const errMsg = document.getElementById('modal-error-msg');
+
+      if (input) input.value = '';
+      if (errMsg) errMsg.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
+
+      setTimeout(() => { if (input) input.focus(); }, 100);
+    }
+
+    function closeAddMemberModal() {
+      const modal = document.getElementById('modal-add-member');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function submitAddMember() {
+      if (clubState.players.length >= 30) {
+        showModalError('El club ya cuenta con el límite de 30 integrantes.');
+        return;
+      }
+
+      const input = document.getElementById('new-member-name-input');
+      const name = input ? input.value.trim().toUpperCase() : '';
+
+      if (!name) {
+        showModalError('Escribe un nombre válido.');
+        return;
+      }
+
+      const exists = clubState.players.some(p => p.name === name);
+      if (exists) {
+        showModalError('Ya existe un integrante con este nombre.');
+        return;
+      }
+
+      const newPlayer = {
+        id: 'p_' + Date.now(),
+        name: name,
+        sendsRemaining: 3,
+        lastUpdated: getNowTimestamp(),
+        album: generateEmptyAlbum()
+      };
+
+      clubState.players.push(newPlayer);
+      clubState.activePlayerId = newPlayer.id;
+      saveState();
+      closeAddMemberModal();
+      renderApp();
+    }
+
+    function showModalError(msg) {
+      const errMsg = document.getElementById('modal-error-msg');
+      if (errMsg) {
+        errMsg.innerText = msg;
+        errMsg.classList.remove('hidden');
+      }
+    }
+
+    // TAB NAVIGATION
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      const activeTab = document.getElementById(`tab-${tabId}`);
+      if (activeTab) activeTab.classList.remove('hidden');
+
+      const tabs = ['club', 'album', 'optimizer', 'admin'];
+      tabs.forEach(t => {
+        const navBtn = document.getElementById(`nav-${t}`);
+        if (navBtn) {
+          if (t === tabId) {
+            navBtn.className = 'px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 font-bold';
+          } else {
+            navBtn.className = 'px-3 sm:px-4 py-2 rounded-lg transition flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800';
+          }
+        }
+      });
+
+      if (tabId === 'optimizer') calculateOptimizations();
+      if (tabId === 'album') renderAlbumTab();
+      if (tabId === 'admin') renderAdminTab();
+    }
+
+    // TAB 2: RENDER ALBUM
+    function renderAlbumTab() {
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      document.getElementById('album-player-name').innerText = activePlayer.name;
+      const timeBadge = document.getElementById('album-last-updated');
+      if (timeBadge) {
+        timeBadge.innerHTML = `<i class="fa-solid fa-clock text-amber-400"></i> Actualizado: ${activePlayer.lastUpdated || 'Reciente'}`;
+      }
+
+      let totalObtained = 0;
+      let totalDuplicates = 0;
+      let totalGoldObtained = 0;
+
+      activePlayer.album.forEach(setObj => {
+        setObj.cards.forEach((val, cIdx) => {
+          const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+          if (isGold) {
+            if (val === 3) { totalObtained++; totalGoldObtained++; }
+          } else {
+            if (val >= 1) totalObtained++;
+            if (val === 2) totalDuplicates++;
+          }
+        });
+      });
+
+      const totalMissing = TOTAL_CARDS - totalObtained;
+
+      document.getElementById('stat-obtained').innerText = `${totalObtained}/${TOTAL_CARDS}`;
+      document.getElementById('stat-duplicates').innerText = totalDuplicates;
+      document.getElementById('stat-gold').innerText = `${totalGoldObtained}/18`;
+      document.getElementById('stat-missing').innerText = totalMissing;
+
+      const container = document.getElementById('album-sets-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      activePlayer.album.forEach(setObj => {
+        const setDiv = document.createElement('div');
+        setDiv.className = 'bg-slate-900 border border-slate-800 rounded-xl p-2.5 shadow-md space-y-1.5';
+
+        let setObtained = 0;
+        setObj.cards.forEach((val, cIdx) => {
+          const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+          if (isGold) { if (val === 3) setObtained++; }
+          else { if (val >= 1) setObtained++; }
+        });
+
+        const isComplete = (setObtained === CARDS_PER_SET);
+
+        let headerHTML = `
+          <div class="flex items-center justify-between border-b border-slate-800 pb-1">
+            <h3 class="font-cinzel font-bold text-amber-400 text-xs">
+              Conjunto ${setObj.setNumber}
+            </h3>
+            ${isComplete 
+              ? '<span class="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1"><i class="fa-solid fa-trophy text-amber-400"></i> ¡COMPLETO!</span>'
+              : `<span class="text-[10px] text-slate-400 font-medium">Faltan <strong class="text-amber-300">${CARDS_PER_SET - setObtained}</strong></span>`
+            }
+          </div>
+        `;
+
+        // Ultra compact single line grid layout (9 columns) optimal for mobile screens
+        let gridHTML = '<div class="grid grid-cols-9 gap-1 pt-0.5">';
+        setObj.cards.forEach((val, cIdx) => {
+          const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+          let statusClass = 'status-0';
+          let statusLabel = `${cIdx + 1}`;
+
+          if (isGold) {
+            statusClass = (val === 3) ? 'status-3 gold-slot-border font-extrabold' : 'status-0 gold-slot-border';
+            if (val === 3) statusLabel = `★`;
+          } else {
+            if (val === 1) statusClass = 'status-1 font-bold';
+            if (val === 2) statusClass = 'status-2 font-bold';
+          }
+
+          gridHTML += `
+            <button 
+              data-set="${setObj.setNumber}" data-card="${cIdx}"
+              class="card-btn card-touch-btn aspect-square rounded border flex flex-col items-center justify-center transition-transform active:scale-95 shadow-sm text-[11px] font-black h-8 sm:h-9 w-full ${statusClass}"
+            >
+              <span>${statusLabel}</span>
+            </button>
+          `;
+        });
+        gridHTML += '</div>';
+
+        setDiv.innerHTML = headerHTML + gridHTML;
+        container.appendChild(setDiv);
+      });
+
+      // Attach Touch / Long Press Event Handlers safely
+      attachCardListeners();
+    }
+
+    // Touch & Long Press gesture handling for card buttons
+    function attachCardListeners() {
+      const cardBtns = document.querySelectorAll('.card-touch-btn');
+      cardBtns.forEach(btn => {
+        let pressTimer = null;
+        let isLongPress = false;
+
+        const setNum = parseInt(btn.getAttribute('data-set'), 10);
+        const cardIdx = parseInt(btn.getAttribute('data-card'), 10);
+
+        const startPress = (e) => {
+          isLongPress = false;
+          pressTimer = setTimeout(() => {
+            isLongPress = true;
+            handleCardLongPress(e, setNum, cardIdx);
+          }, 450);
+        };
+
+        const cancelPress = () => {
+          if (pressTimer) clearTimeout(pressTimer);
+        };
+
+        btn.addEventListener('touchstart', startPress, { passive: true });
+        btn.addEventListener('touchend', (e) => {
+          cancelPress();
+          if (isLongPress && e.cancelable) {
+            e.preventDefault();
+          }
+        });
+        btn.addEventListener('touchmove', cancelPress, { passive: true });
+
+        btn.addEventListener('mousedown', startPress);
+        btn.addEventListener('mouseup', cancelPress);
+        btn.addEventListener('mouseleave', cancelPress);
+
+        btn.addEventListener('click', (e) => {
+          if (!isLongPress) {
+            handleCardClick(setNum, cardIdx);
+          }
+        });
+
+        btn.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          handleCardLongPress(e, setNum, cardIdx);
+        });
+      });
+    }
+
+    // CARD CLICK CYCLE & RESET LOGIC
+    function handleCardClick(setNumber, cardIndex) {
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      const setObj = activePlayer.album.find(s => s.setNumber === setNumber);
+      if (!setObj) return;
+
+      markPlayerUpdated(activePlayer);
+
+      // Check pre-click completion status
+      let prevObtained = 0;
+      setObj.cards.forEach((v, idx) => {
+        if (isGoldCardSlot(setNumber, idx)) { if (v === 3) prevObtained++; }
+        else { if (v >= 1) prevObtained++; }
+      });
+      const wasComplete = (prevObtained === CARDS_PER_SET);
+
+      const isGold = isGoldCardSlot(setNumber, cardIndex);
+      const currentVal = setObj.cards[cardIndex];
+
+      if (isGold) {
+        setObj.cards[cardIndex] = (currentVal === 3) ? 0 : 3;
+      } else {
+        // Cycle: 0 (Gris) -> 1 (Verde) -> 2 (Morado) -> 1 (Verde)
+        if (currentVal === 0) setObj.cards[cardIndex] = 1;
+        else if (currentVal === 1) setObj.cards[cardIndex] = 2;
+        else if (currentVal === 2) setObj.cards[cardIndex] = 1;
+      }
+
+      // Check set completion post-click for confetti
+      let postObtained = 0;
+      setObj.cards.forEach((v, idx) => {
+        if (isGoldCardSlot(setNumber, idx)) { if (v === 3) postObtained++; }
+        else { if (v >= 1) postObtained++; }
+      });
+      const isCompleteNow = (postObtained === CARDS_PER_SET);
+
+      // Total Album cards calculation
+      let totalObtainedAlbum = 0;
+      activePlayer.album.forEach(s => {
+        s.cards.forEach((v, idx) => {
+          if (isGoldCardSlot(s.setNumber, idx)) { if (v === 3) totalObtainedAlbum++; }
+          else { if (v >= 1) totalObtainedAlbum++; }
+        });
+      });
+
+      // FIRE CELEBRATION LOGIC
+      if (totalObtainedAlbum === TOTAL_CARDS) {
+        triggerGrandAlbumCelebration(activePlayer.name);
+      } else if (!wasComplete && isCompleteNow && window.confetti) {
+        confetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+      }
+
+      saveState();
+      renderApp();
+    }
+
+    function handleCardLongPress(e, setNumber, cardIndex) {
+      if (e && e.preventDefault) e.preventDefault();
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      markPlayerUpdated(activePlayer);
+
+      const setObj = activePlayer.album.find(s => s.setNumber === setNumber);
+      if (setObj) {
+        setObj.cards[cardIndex] = 0; // Return back to missing (gray)
+        saveState();
+        renderApp();
+      }
+    }
+
+    // EPIC GRAND CELEBRATION FOR FULL ALBUM (135/135)
+    function triggerGrandAlbumCelebration(playerName) {
+      const modal = document.getElementById('modal-grand-celebration');
+      const nameEl = document.getElementById('celebration-player-name');
+      if (nameEl) nameEl.innerText = playerName;
+      if (modal) modal.classList.remove('hidden');
+
+      if (!window.confetti) return;
+
+      const duration = 3.5 * 1000;
+      const animationEnd = Date.now() + duration;
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+        const particleCount = 50 * (timeLeft / duration);
+        confetti({
+          particleCount,
+          startVelocity: 30,
+          spread: 360,
+          origin: { x: Math.random(), y: Math.random() - 0.2 }
+        });
+      }, 250);
+    }
+
+    function closeGrandCelebration() {
+      const modal = document.getElementById('modal-grand-celebration');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function renameCurrentPlayer() {
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      const modal = document.getElementById('modal-rename-member');
+      const input = document.getElementById('rename-member-name-input');
+      const errMsg = document.getElementById('modal-rename-error-msg');
+
+      if (input) input.value = activePlayer.name;
+      if (errMsg) errMsg.classList.add('hidden');
+      if (modal) modal.classList.remove('hidden');
+
+      setTimeout(() => { if (input) input.focus(); }, 100);
+    }
+
+    function closeRenameMemberModal() {
+      const modal = document.getElementById('modal-rename-member');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function submitRenameMember() {
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      const input = document.getElementById('rename-member-name-input');
+      const newName = input ? input.value.trim().toUpperCase() : '';
+
+      if (!newName) {
+        showRenameModalError('Escribe un nombre válido.');
+        return;
+      }
+
+      const exists = clubState.players.some(p => p.id !== activePlayer.id && p.name === newName);
+      if (exists) {
+        showRenameModalError('Ya existe otro integrante con este nombre.');
+        return;
+      }
+
+      activePlayer.name = newName;
+      saveState();
+      closeRenameMemberModal();
+      renderApp();
+    }
+
+    function showRenameModalError(msg) {
+      const errMsg = document.getElementById('modal-rename-error-msg');
+      if (errMsg) {
+        errMsg.innerText = msg;
+        errMsg.classList.remove('hidden');
+      }
+    }
+
+    function resetWholeAlbum() {
+      const activePlayer = getActivePlayer();
+      if (!activePlayer) return;
+
+      activePlayer.album = generateEmptyAlbum();
+      markPlayerUpdated(activePlayer);
+      saveState();
+      renderApp();
+    }
+
+    // TAB 3: OPTIMIZER ENGINE
+    function calculateOptimizations() {
+      const sender = getActivePlayer();
+      const senderNameEl = document.getElementById('opt-sender-name');
+      if (senderNameEl) senderNameEl.innerText = sender ? sender.name : '---';
+
+      const outgoingContainer = document.getElementById('outgoing-recommendations');
+      const incomingContainer = document.getElementById('incoming-recommendations');
+
+      if (!outgoingContainer || !incomingContainer || !sender) return;
+
+      outgoingContainer.innerHTML = '';
+      incomingContainer.innerHTML = '';
+
+      const senderDuplicates = [];
+      sender.album.forEach(setObj => {
+        setObj.cards.forEach((val, cIdx) => {
+          if (!isGoldCardSlot(setObj.setNumber, cIdx) && val === 2) {
+            senderDuplicates.push({ setNumber: setObj.setNumber, cardIndex: cIdx });
+          }
+        });
+      });
+
+      // OUTGOING (Cards sender can give)
+      if (senderDuplicates.length === 0) {
+        outgoingContainer.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-slate-400 text-xs">
+            No tienes cromos duplicados registrados actualmente para enviar.
+          </div>
+        `;
+      } else {
+        const matches = [];
+
+        clubState.players.forEach(receiver => {
+          if (receiver.id === sender.id) return;
+
+          let receiverMissingCount = 0;
+          receiver.album.forEach(setObj => {
+            setObj.cards.forEach((val, cIdx) => {
+              const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
+              if ((isGold && val !== 3) || (!isGold && val === 0)) receiverMissingCount++;
+            });
+          });
+
+          senderDuplicates.forEach(dup => {
+            const receiverSet = receiver.album.find(s => s.setNumber === dup.setNumber);
+            if (receiverSet && receiverSet.cards[dup.cardIndex] === 0) {
+              matches.push({
+                receiver: receiver,
+                setNumber: dup.setNumber,
+                cardIndex: dup.cardIndex,
+                receiverMissingTotal: receiverMissingCount
+              });
+            }
+          });
+        });
+
+        // Priority: receivers closest to completing album
+        matches.sort((a, b) => a.receiverMissingTotal - b.receiverMissingTotal);
+
+        if (matches.length === 0) {
+          outgoingContainer.innerHTML = `
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-slate-400 text-xs">
+              Tus cromos duplicados no le faltan a ningún miembro actualmente.
+            </div>
+          `;
+        } else {
+          matches.slice(0, 8).forEach(match => {
+            const cardNum = match.cardIndex + 1;
+            const div = document.createElement('div');
+            div.className = 'bg-slate-900 border border-amber-500/20 rounded-xl p-4 flex items-center justify-between gap-4';
+            div.innerHTML = `
+              <div class="space-y-1">
+                <div class="text-xs font-bold text-amber-300">
+                  Enviar Conjunto ${match.setNumber} • Carta #${cardNum} ➔ <span class="text-amber-400">${match.receiver.name}</span>
+                </div>
+                <div class="text-[11px] text-slate-400">
+                  A este compañero le faltan solo <strong>${match.receiverMissingTotal}</strong> cromos para completar el álbum.
+                </div>
+              </div>
+              <button onclick="togglePlayerSendCount('${sender.id}')" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shrink-0 transition cursor-pointer">
+                <i class="fa-solid fa-paper-plane"></i> Enviar
+              </button>
+            `;
+            outgoingContainer.appendChild(div);
+          });
+        }
+      }
+
+      // INCOMING (Cards others can give to active player)
+      const incomingMatches = [];
+      clubState.players.forEach(giver => {
+        if (giver.id === sender.id) return;
+
+        giver.album.forEach(setObj => {
+          setObj.cards.forEach((val, cIdx) => {
+            if (!isGoldCardSlot(setObj.setNumber, cIdx) && val === 2) {
+              const senderSet = sender.album.find(s => s.setNumber === setObj.setNumber);
+              if (senderSet && senderSet.cards[cIdx] === 0) {
+                incomingMatches.push({
+                  giverName: giver.name,
+                  setNumber: setObj.setNumber,
+                  cardIndex: cIdx
+                });
+              }
+            }
+          });
+        });
+      });
+
+      if (incomingMatches.length === 0) {
+        incomingContainer.innerHTML = `
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center text-slate-400 text-xs">
+            Ningún miembro tiene duplicados de los cromos que te faltan.
+          </div>
+        `;
+      } else {
+        incomingMatches.slice(0, 8).forEach(m => {
+          const div = document.createElement('div');
+          div.className = 'bg-slate-900 border border-emerald-500/20 rounded-xl p-3 flex items-center justify-between text-xs';
+          div.innerHTML = `
+            <div>
+              <span class="font-bold text-emerald-300">${m.giverName}</span>
+              <span class="text-slate-400"> tiene </span>
+              <strong class="text-amber-300">Conjunto ${m.setNumber} - #${m.cardIndex + 1}</strong>
+            </div>
+            <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30 font-semibold">Te falta</span>
+          `;
+          incomingContainer.appendChild(div);
+        });
+      }
+    }
+
+    function renderAdminTab() {
+      const container = document.getElementById('admin-members-list');
+      if (!container) return;
+      container.innerHTML = '';
+
+      clubState.players.forEach(p => {
+        const sends = p.sendsRemaining ?? 3;
+        const lastUp = p.lastUpdated || 'Reciente';
+
+        const div = document.createElement('div');
+        div.className = 'bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3';
+        div.innerHTML = `
+          <div class="flex flex-col gap-0.5">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-user text-amber-400 text-xs"></i>
+              <span class="font-bold text-sm text-slate-200">${p.name}</span>
+            </div>
+            <span class="text-[10px] text-slate-400"><i class="fa-solid fa-clock text-[9px] text-amber-400/80"></i> ${lastUp}</span>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button onclick="togglePlayerSendCount('${p.id}')" class="px-3 py-1.5 ${sends > 0 ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' : 'bg-red-500/10 text-red-400 border-red-500/30'} border rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-paper-plane text-[10px]"></i> Envíos: ${sends}/3
+            </button>
+            <button onclick="deleteMember('${p.id}')" class="p-2 bg-red-950/50 hover:bg-red-900/80 text-red-400 rounded-lg border border-red-800/50 transition cursor-pointer" title="Eliminar Integrante">
+              <i class="fa-solid fa-trash-can text-xs"></i>
+            </button>
+          </div>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function deleteMember(playerId) {
+      if (clubState.players.length <= 1) {
+        alert('Debe haber al menos un integrante en el club.');
+        return;
+      }
+
+      const pin = prompt('Ingresa el PIN de Administrador para eliminar a este integrante:');
+      if (pin !== clubState.adminPin) {
+        alert('PIN incorrecto.');
+        return;
+      }
+
+      clubState.players = clubState.players.filter(p => p.id !== playerId);
+      if (clubState.activePlayerId === playerId) {
+        clubState.activePlayerId = clubState.players[0].id;
+      }
+
+      saveState();
+      renderApp();
+    }
+  </script>
+</body>
+</html>
