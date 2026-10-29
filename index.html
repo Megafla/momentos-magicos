@@ -1,2066 +1,597 @@
 <!DOCTYPE html>
-<html lang="es" class="bg-slate-950 text-slate-100">
+<html lang="es" class="bg-slate-950 text-slate-100 scroll-smooth">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Magos Famosos - Momentos Mágicos</title>
-  <!-- Tailwind CSS CDN -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guía de Uso - Magos Famosos</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <!-- Google Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Canvas Confetti Library -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  
   <script>
     tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            cinzel: ['Cinzel', 'serif'],
-            sans: ['Inter', 'sans-serif'],
-          }
-        }
-      }
+      theme: { extend: { fontFamily: { cinzel: ['Cinzel', 'serif'], sans: ['Inter', 'sans-serif'] } } }
     }
   </script>
-  
   <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-track { background: #0b132b; }
-    ::-webkit-scrollbar-thumb { background: #1c2d5a; border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: #d97706; }
-
-    /* Keyframe Animations */
-    @keyframes fadeInTab {
-      from { opacity: 0; transform: translateY(8px) scale(0.99); }
-      to { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes popInMessage {
-      0% { opacity: 0; transform: translateY(10px) scale(0.95); }
-      100% { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    @keyframes pulseGlow {
-      0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.2); }
-      50% { box-shadow: 0 0 18px rgba(245, 158, 11, 0.6); }
-    }
-
-    .tab-animate {
-      animation: fadeInTab 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .chat-msg-animate {
-      animation: popInMessage 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-    
-    /* Card states styling */
+    /* Estados Visuales */
     .status-0 { background-color: #334155; color: #94a3b8; border-color: #475569; }
     .status-1 { background-color: #15803d; color: #ffffff; border-color: #22c55e; box-shadow: 0 0 8px rgba(34, 197, 94, 0.2); }
-    .status-2 { background-color: #6d28d9; color: #ffffff; border-color: #a855f7; box-shadow: 0 0 8px rgba(168, 85, 247, 0.25); }
+    .status-2 { background-color: #6d28d9; color: #ffffff; border-color: #a855f7; }
     .status-3 { background-color: #b45309; color: #fef08a; border-color: #f59e0b; animation: pulseGlow 2.5s infinite; }
+
+    @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 8px rgba(245, 158, 11, 0.2); } 50% { box-shadow: 0 0 18px rgba(245, 158, 11, 0.6); } }
 
     .gold-slot-border { border: 2px dashed #f59e0b !important; }
     
-    .card-btn {
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-      touch-action: manipulation;
-      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Lógica de tarjetas para la demo */
+    .card-slot {
+      user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+      transition: transform 0.1s ease, background-color 0.1s ease, border-color 0.1s ease;
+      cursor: pointer; position: relative;
     }
+    .card-slot.is-touched { transform: scale(0.92); }
 
-    .card-btn:active {
-      transform: scale(0.92);
+    .ribbon {
+      position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+      background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%);
+      color: white; font-weight: 900; font-size: 14px; padding: 4px 12px 4px 6px;
+      filter: drop-shadow(0px 0px 1px #f8fafc) drop-shadow(0px 3px 4px rgba(0,0,0,0.6));
+      clip-path: polygon(0 0, 100% 0, 85% 50%, 100% 100%, 0 100%);
+      z-index: 10; pointer-events: auto; transition: transform 0.1s ease;
     }
+    .ribbon.is-touched { transform: translateY(-50%) scale(0.85); }
 
-    select option {
-      background-color: #0f172a;
-      color: #f8fafc;
-      padding: 10px;
-    }
+    /* Vistas */
+    .view-game .card-slot { aspect-ratio: 3 / 4; width: 100%; border-width: 3px; border-radius: 1rem; font-size: 2rem; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+    .view-classic .card-slot { height: 2.5rem; font-size: 0.75rem; border-width: 1px; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; font-weight: 900; }
+    .view-classic .ribbon { font-size: 9px; padding: 1px 6px 1px 3px; left: -5px; }
+
+    /* UI General */
+    .step-card { background-color: #0f172a; border: 1px solid #1e293b; border-radius: 1rem; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .mockup-box { background-color: #1e293b; border: 1px solid #334155; border-radius: 0.5rem; padding: 1rem; margin-top: 1rem; }
+    
+    /* Etiqueta Nuevo */
+    .new-badge { position: absolute; top: -6px; right: -6px; background-color: #ef4444; color: white; font-size: 8px; font-weight: bold; padding: 1px 4px; border-radius: 9999px; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 20; }
+
+    /* Reacciones Chat */
+    .reaction-chip { display: inline-flex; align-items: center; background: #1e293b; border: 1px solid #475569; border-radius: 12px; padding: 1px 6px; font-size: 11px; cursor: pointer; margin-top: 4px; margin-right: 4px; }
   </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-slate-950 min-h-screen pb-20 md:pb-8">
+<body class="bg-slate-950 text-slate-100 font-sans antialiased pb-20">
 
-  <!-- Header Navigation -->
-  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 shadow-lg backdrop-blur-md bg-slate-900/90">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex items-center justify-between h-16 gap-2">
-        <!-- Logo & Title -->
-        <div class="flex items-center space-x-2 sm:space-x-3 shrink-0">
-          <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 flex items-center justify-center text-slate-950 font-bold text-lg sm:text-xl shadow-lg shadow-amber-500/20 shrink-0 transform transition hover:rotate-6">
-            <i class="fa-solid fa-hat-wizard"></i>
-          </div>
-          <div>
-            <h1 class="font-cinzel text-base sm:text-xl font-extrabold text-slate-100 tracking-wide flex items-center gap-2">
-              Magos Famosos
-            </h1>
-            <div class="flex items-center gap-2 text-[10px] sm:text-[11px] text-slate-400">
-              <span class="hidden sm:inline" data-i18n="subtitle">Momentos Mágicos • Intercambio</span>
-              <span id="cloud-sync-status" class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 transition-all">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> <span data-i18n="synced">Sincronizado</span>
-              </span>
-            </div>
-          </div>
+  <!-- Header Fijo -->
+  <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-50 shadow-lg backdrop-blur-md bg-slate-900/90 py-4">
+    <div class="max-w-4xl mx-auto px-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg">
+          <i class="fa-solid fa-hat-wizard"></i>
         </div>
-
-        <!-- Top Club Stats Summary Bar (PC) -->
-        <div class="hidden lg:flex items-center gap-6 text-xs bg-slate-950/80 px-4 py-2 rounded-xl border border-slate-800 shadow-inner">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-users text-indigo-400"></i>
-            <span class="text-slate-400" data-i18n="stat_members">Miembros:</span>
-            <strong id="header-stat-members" class="text-slate-200 font-bold">0/30</strong>
-          </div>
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-chart-pie text-emerald-400"></i>
-            <span class="text-slate-400" data-i18n="stat_progress">Progreso Club:</span>
-            <strong id="header-stat-progress" class="text-emerald-300 font-bold">0%</strong>
-          </div>
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-right-left text-purple-400"></i>
-            <span class="text-slate-400" data-i18n="stat_duplicates">Duplicados Totales:</span>
-            <strong id="header-stat-duplicates" class="text-purple-300 font-bold">0</strong>
-          </div>
-        </div>
-
-        <!-- Right Side Controls -->
-        <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
-          <button id="header-add-new-btn" onclick="openRegisterUserModal()" class="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition-all transform hover:scale-105 flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-user-plus text-amber-400"></i> <span class="hidden sm:inline" data-i18n="add_new">+ Nuevo</span>
-          </button>
-
-          <!-- Selector de Visor -->
-          <div class="flex items-center space-x-1 bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700 transition hover:border-slate-600">
-            <i class="fa-solid fa-user-check text-emerald-400 text-xs sm:text-sm" id="user-status-icon"></i>
-            <select id="active-view-select" onchange="changeViewedPlayer(this.value)" class="bg-transparent text-xs sm:text-sm font-semibold text-slate-200 focus:outline-none cursor-pointer max-w-[90px] sm:max-w-[140px] truncate">
-            </select>
-          </div>
-
-          <button id="btn-login-logout" onclick="handleAuthAction()" class="px-2.5 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-bold transition-all transform hover:scale-105 flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-key text-amber-400"></i> <span id="auth-btn-label">Login</span>
-          </button>
-
-          <!-- Selector de Idioma -->
-          <div class="flex items-center space-x-1.5 bg-slate-800/90 px-2 py-1.5 rounded-lg border border-slate-700 shadow-sm hover:border-amber-500/40 transition">
-            <span id="lang-flag-icon" class="w-4 h-4 rounded-full overflow-hidden shrink-0 flex items-center justify-center"></span>
-            <select id="language-select" onchange="changeLanguage(this.value)" class="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer">
-              <option value="es">ES</option>
-              <option value="en">EN</option>
-              <option value="pt">PT</option>
-            </select>
-          </div>
+        <div>
+          <h1 class="font-cinzel text-xl font-extrabold text-slate-100">Guía del Club</h1>
+          <p class="text-xs text-slate-400">Aprende a usar la herramienta</p>
         </div>
       </div>
-    </div>
-
-    <!-- Navigation Bar (PC) -->
-    <div class="hidden md:flex bg-slate-950 border-t border-slate-800 px-4 py-2 justify-center gap-2 text-xs sm:text-sm font-semibold">
-      <button onclick="switchTab('club')" id="nav-club" class="px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center gap-1.5 bg-slate-800 text-amber-400 border border-slate-700 font-bold">
-        <i class="fa-solid fa-users"></i> <span data-i18n="nav_club">Panel del Club</span>
-      </button>
-      <button onclick="switchTab('album')" id="nav-album" class="px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
-        <i class="fa-solid fa-book-open"></i> <span data-i18n="nav_album">Mi Álbum</span>
-      </button>
-      <button onclick="switchTab('optimizer')" id="nav-optimizer" class="px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
-        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span data-i18n="nav_sugeridos">Envíos Sugeridos</span>
-      </button>
-      <button onclick="switchTab('chat')" id="nav-chat" class="px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
-        <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="nav_chat">Chat Mágico</span>
-      </button>
-      <button onclick="switchTab('admin')" id="nav-admin" class="px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 flex items-center gap-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800">
-        <i class="fa-solid fa-shield-halved text-amber-400"></i> <span data-i18n="nav_admin">Administración</span>
-      </button>
     </div>
   </header>
 
-  <!-- Mobile Bottom Navigation Bar -->
-  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 z-50 flex justify-around items-center px-1 py-2 text-center text-[10px] font-semibold">
-    <button onclick="switchTab('club')" id="mobile-nav-club" class="flex-1 flex flex-col items-center py-1 text-amber-400 transition-transform active:scale-95">
-      <i class="fa-solid fa-users text-base mb-0.5"></i>
-      <span data-i18n="nav_club_short">Club</span>
-    </button>
-    <button onclick="switchTab('album')" id="mobile-nav-album" class="flex-1 flex flex-col items-center py-1 text-slate-400 transition-transform active:scale-95">
-      <i class="fa-solid fa-book-open text-base mb-0.5"></i>
-      <span data-i18n="nav_album_short">Álbum</span>
-    </button>
-    <button onclick="switchTab('optimizer')" id="mobile-nav-optimizer" class="flex-1 flex flex-col items-center py-1 text-slate-400 transition-transform active:scale-95">
-      <i class="fa-solid fa-wand-magic-sparkles text-base mb-0.5"></i>
-      <span data-i18n="nav_sugeridos_short">Sugeridos</span>
-    </button>
-    <button onclick="switchTab('chat')" id="mobile-nav-chat" class="flex-1 flex flex-col items-center py-1 text-slate-400 transition-transform active:scale-95">
-      <i class="fa-solid fa-comments text-base mb-0.5"></i>
-      <span data-i18n="nav_chat_short">Chat</span>
-    </button>
-    <button onclick="switchTab('admin')" id="mobile-nav-admin" class="flex-1 flex flex-col items-center py-1 text-slate-400 transition-transform active:scale-95">
-      <i class="fa-solid fa-shield-halved text-base mb-0.5"></i>
-      <span data-i18n="nav_admin_short">Admin</span>
-    </button>
-  </nav>
+  <main class="max-w-3xl mx-auto px-4 pt-8 space-y-8">
+    
+    <!-- Intro -->
+    <div class="text-center space-y-3 mb-10">
+      <h2 class="font-cinzel text-3xl font-bold text-amber-400">¡Bienvenido, Mago!</h2>
+      <p class="text-slate-300 text-sm max-w-lg mx-auto">Esta app es el centro de estrategia de nuestro club. Aquí coordinaremos los envíos para ganar la liga semanal. Sigue esta guía para dominar la herramienta.</p>
+    </div>
 
-  <!-- Main Content Area -->
-  <main class="max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8">
-
-    <!-- TAB 1: PANEL DEL CLUB -->
-    <section id="tab-club" class="tab-content tab-animate space-y-4 sm:space-y-6">
-      <div class="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
-        <div class="space-y-1 text-center sm:text-left">
-          <h2 class="font-cinzel text-xl sm:text-3xl font-extrabold text-slate-100 tracking-wide" data-i18n="club_title">
-            Panel de Integrantes
-          </h2>
-          <p class="text-xs sm:text-sm text-slate-400" data-i18n="club_desc">
-            Resumen global del club. Toca a cualquier miembro para ver o consultar su álbum.
-          </p>
-        </div>
-
-        <button id="hero-create-user-btn" onclick="openRegisterUserModal()" class="w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl border border-slate-700 shadow-lg transition-all transform hover:scale-105 flex items-center justify-center gap-2 text-xs cursor-pointer">
-          <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_add_member">Crear Mi Usuario</span>
-        </button>
+    <!-- SECCIÓN 1: EL ÁLBUM (SIMULADOR INTERACTIVO) -->
+    <section class="step-card relative border-amber-500/30">
+      <div class="flex items-center gap-3 mb-4 border-b border-slate-800 pb-3">
+        <span class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg">1</span>
+        <h3 class="font-cinzel text-xl font-bold text-slate-100">Mi Álbum (Las Casillas)</h3>
       </div>
+      
+      <p class="text-sm text-slate-300 mb-4">Aquí es donde registras tu progreso. <strong>Practica en el tablero de abajo</strong> para dominar los gestos táctiles.</p>
 
-      <div id="club-members-mobile-cards" class="grid grid-cols-1 gap-3 md:hidden"></div>
-
-      <div class="hidden md:block bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-950 text-xs font-semibold uppercase text-slate-400 border-b border-slate-800">
-              <tr>
-                <th class="p-4" data-i18n="th_member">Integrante</th>
-                <th class="p-4 text-center" data-i18n="th_progress">Progreso</th>
-                <th class="p-4 text-center" data-i18n="th_missing">Faltantes</th>
-                <th class="p-4 text-center" data-i18n="th_duplicates">Duplicados</th>
-                <th class="p-4 text-center" data-i18n="th_gold">Dorados</th>
-                <th class="p-4 text-center" data-i18n="th_sends">Envíos Hoy</th>
-                <th class="p-4 text-center" data-i18n="th_last_update">Última Act.</th>
-                <th class="p-4 text-right" data-i18n="th_action">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="club-members-tbody" class="divide-y divide-slate-800/60"></tbody>
-          </table>
+      <!-- Instrucciones rápidas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center gap-3">
+          <i class="fa-solid fa-hand-pointer text-amber-400 text-xl"></i>
+          <div class="text-xs"><strong>Toca:</strong> Pasa de Gris a Verde (Obtenido) y luego a Morado (+1, +2...).</div>
         </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: ÁLBUM DE CROMOS -->
-    <section id="tab-album" class="tab-content tab-animate space-y-4 sm:space-y-6 hidden">
-      <div class="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-xl flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-6">
-        <div>
-          <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <h2 id="album-player-name" class="font-cinzel text-xl sm:text-2xl font-bold text-slate-100">---</h2>
-            
-            <button id="btn-album-edit-name" onclick="openRenameMemberModal()" class="text-[11px] px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition-all hover:scale-105 flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-pen text-amber-400"></i> <span data-i18n="btn_edit">Editar</span>
-            </button>
-            <button id="btn-album-reset" onclick="resetWholeAlbum()" class="text-[11px] px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-300 rounded-lg border border-red-800/80 transition-all hover:scale-105 flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-rotate-left"></i> <span data-i18n="btn_reset">Reiniciar</span>
-            </button>
-
-            <span id="read-only-badge" class="hidden text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg font-bold flex items-center gap-1">
-              <i class="fa-solid fa-eye"></i> <span data-i18n="read_only_mode">MODO LECTURA</span>
-            </span>
-          </div>
-
-          <div class="flex flex-col sm:flex-row sm:items-center gap-2 mt-2.5">
-            <div id="instructions-container" class="inline-flex items-center gap-1.5 text-[11px] bg-slate-950 text-slate-200 px-3 py-1 rounded-lg border border-slate-800 shadow-inner">
-              <i class="fa-solid fa-hand-pointer text-amber-400 animate-pulse"></i>
-              <span data-i18n="album_instructions"><strong>Toque corto:</strong> Cambia estado • <strong>Mantener presionado:</strong> Casilla a Gris.</span>
-            </div>
-            <span id="album-last-updated-badge" class="text-[10px] text-amber-300/90 bg-slate-950 px-2.5 py-1 rounded-lg border border-amber-500/30 font-mono font-semibold self-start sm:self-auto shadow-sm">
-              Actualizado: ---
-            </span>
-          </div>
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center gap-3">
+          <i class="fa-solid fa-hand-point-up text-purple-400 text-xl"></i>
+          <div class="text-xs"><strong>Toca la cinta morada:</strong> Para restar 1 duplicado (ej. de +3 a +2).</div>
         </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          <div class="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-emerald-500/30 flex items-center gap-2.5 transition hover:border-emerald-500/60">
-            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-xs sm:text-sm text-white shrink-0 shadow-md">
-              <i class="fa-solid fa-check"></i>
-            </div>
-            <div>
-              <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold" data-i18n="stat_obtained_title">Obtenidos</div>
-              <div id="stat-obtained" class="text-sm sm:text-base font-bold text-emerald-400">0/135</div>
-            </div>
-          </div>
-
-          <div class="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-purple-500/30 flex items-center gap-2.5 transition hover:border-purple-500/60">
-            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-purple-600 flex items-center justify-center font-bold text-xs sm:text-sm text-white shrink-0 shadow-md">
-              <i class="fa-solid fa-copy"></i>
-            </div>
-            <div>
-              <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold" data-i18n="stat_duplicates_title">Duplicados</div>
-              <div id="stat-duplicates" class="text-sm sm:text-base font-bold text-purple-400">0</div>
-            </div>
-          </div>
-
-          <div class="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-amber-500/30 flex items-center gap-2.5 transition hover:border-amber-500/60">
-            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-amber-600 flex items-center justify-center font-bold text-xs sm:text-sm text-slate-950 shrink-0 shadow-md">
-              <i class="fa-solid fa-crown"></i>
-            </div>
-            <div>
-              <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold" data-i18n="stat_gold_title">Dorados</div>
-              <div id="stat-gold" class="text-sm sm:text-base font-bold text-amber-400">0/18</div>
-            </div>
-          </div>
-
-          <div class="bg-slate-950/70 p-2.5 sm:p-3 rounded-xl border border-slate-700 flex items-center gap-2.5 transition hover:border-slate-600">
-            <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-700 flex items-center justify-center font-bold text-xs sm:text-sm text-slate-300 shrink-0 shadow-md">
-              <i class="fa-solid fa-circle-minus"></i>
-            </div>
-            <div>
-              <div class="text-[9px] sm:text-[10px] text-slate-400 uppercase font-semibold" data-i18n="stat_missing_title">Faltantes</div>
-              <div id="stat-missing" class="text-sm sm:text-base font-bold text-slate-300">135</div>
-            </div>
-          </div>
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center gap-3">
+          <i class="fa-solid fa-arrows-left-right text-emerald-400 text-xl"></i>
+          <div class="text-xs"><strong>Desliza:</strong> Mantén presionado y arrastra horizontalmente para pintar varios cromos de golpe.</div>
+        </div>
+        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 flex items-center gap-3">
+          <i class="fa-solid fa-hand text-red-400 text-xl"></i>
+          <div class="text-xs"><strong>Mantener presionado:</strong> Devuelve la casilla a Gris (Faltante).</div>
         </div>
       </div>
 
-      <!-- Leyenda -->
-      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] bg-slate-900/60 p-2.5 sm:p-3 rounded-xl border border-slate-800">
-        <span class="text-slate-300 font-medium" data-i18n="legend_title">Leyenda:</span>
-        <div class="grid grid-cols-2 sm:flex flex-wrap gap-2 w-full sm:w-auto text-center">
-          <span class="px-3 py-1 rounded status-0 border font-semibold transition hover:brightness-110" data-i18n="legend_missing">Faltante</span>
-          <span class="px-3 py-1 rounded status-1 border font-semibold transition hover:brightness-110" data-i18n="legend_obtained">Obtenido</span>
-          <span class="px-3 py-1 rounded status-2 border font-semibold transition hover:brightness-110" data-i18n="legend_duplicate">Duplicado</span>
-          <span class="px-3 py-1 rounded status-3 border font-semibold border-amber-500 transition hover:brightness-110" data-i18n="legend_gold">Dorado</span>
-        </div>
-      </div>
-
-      <div id="album-sets-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"></div>
-    </section>
-
-    <!-- TAB 3: OPTIMIZADOR DE ENVÍOS -->
-    <section id="tab-optimizer" class="tab-content tab-animate space-y-4 sm:space-y-6 hidden">
-      <div class="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div>
-          <h2 class="font-cinzel text-xl sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
-            <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> <span data-i18n="optimizer_title">Centro de Intercambios Sugeridos</span>
-          </h2>
-          <p class="text-xs sm:text-sm text-slate-400 mt-1" data-i18n="optimizer_desc">
-            Recomendaciones inteligentes priorizadas para que el club avance y cierre álbumes juntos.
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2 w-full sm:w-auto bg-slate-950 px-3 py-2 rounded-xl border border-slate-800">
-          <span class="text-xs text-slate-400 font-medium shrink-0" data-i18n="filter_by">Filtrar por:</span>
-          <select id="optimizer-sender-filter" onchange="calculateOptimizations()" class="bg-transparent text-xs font-bold text-slate-200 focus:outline-none cursor-pointer w-full sm:w-auto">
-            <option value="ALL">🌐 TODO EL CLUB (GLOBAL)</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="font-cinzel text-base sm:text-lg font-bold text-slate-200 flex items-center gap-2">
-            <i class="fa-solid fa-paper-plane text-purple-400"></i> <span data-i18n="recommended_title">Envíos Más Óptimos Recomendados</span>
-          </h3>
-          <button onclick="calculateOptimizations()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-bold transition-all hover:scale-105 flex items-center gap-1 cursor-pointer">
-            <i class="fa-solid fa-rotate-right text-amber-400"></i> <span data-i18n="btn_refresh">Actualizar</span>
-          </button>
-        </div>
-
-        <div id="outgoing-recommendations" class="space-y-3"></div>
-      </div>
-    </section>
-
-    <!-- TAB 4: CHAT MÁGICO EN VIVO -->
-    <section id="tab-chat" class="tab-content tab-animate space-y-4 hidden">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-xl space-y-4 max-w-4xl mx-auto">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-          <div>
-            <h2 class="font-cinzel text-lg sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
-              <i class="fa-solid fa-comments text-indigo-400"></i> <span data-i18n="chat_header_title">Chat Mágico del Club</span>
-            </h2>
-            <p class="text-xs text-slate-400" data-i18n="chat_header_desc">Coordinen intercambios de cromos y envíos diarios en tiempo real.</p>
-          </div>
+      <!-- Simulador de Casillas -->
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-inner">
+        <div class="flex justify-between items-center mb-3">
+          <span class="text-xs font-bold text-slate-400 uppercase">Área de Práctica</span>
           <div class="flex items-center gap-2">
-            <button id="admin-clear-chat-btn" onclick="clearFullChatPrompt()" class="hidden px-2.5 py-1 bg-red-950/60 hover:bg-red-900/80 text-red-300 rounded-lg border border-red-800 text-xs font-bold transition-all hover:scale-105 flex items-center gap-1 cursor-pointer">
-              <i class="fa-solid fa-trash"></i> <span data-i18n="chat_clear_btn">Vaciar Chat</span>
+            <!-- Botón de Reiniciar (Igual al de la web) -->
+            <button onclick="resetDemoSet()" title="Reiniciar Conjunto" class="text-slate-500 hover:text-amber-400 transition transform hover:rotate-[-90deg] p-1">
+              <i class="fa-solid fa-rotate-left"></i>
             </button>
-            <span class="text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded-lg font-mono">
-              ● <span data-i18n="chat_live">En Vivo</span>
-            </span>
+            <button onclick="toggleView()" class="text-[10px] px-2 py-1 bg-slate-800 rounded text-slate-300 hover:text-white transition">
+              <i class="fa-solid fa-arrows-rotate"></i> Cambiar Vista
+            </button>
           </div>
         </div>
+        
+        <!-- Contenedor del tablero -->
+        <div id="practice-container" class="view-classic grid grid-cols-9 gap-1 max-w-full mx-auto"></div>
+        
+        <div class="mt-4 flex justify-center gap-4 text-[10px] text-slate-400">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span> El cromo 9 es Dorado</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span> El cromo 8 es Normal</span>
+        </div>
+      </div>
 
-        <!-- Mensajes -->
-        <div id="chat-messages-container" class="h-80 sm:h-96 overflow-y-auto space-y-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800/80"></div>
-
-        <!-- Enviar Mensaje -->
-        <form onsubmit="sendChatMessage(event)" class="flex gap-2">
-          <input type="text" id="chat-input" placeholder="Escribe un mensaje para el club..." class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs sm:text-sm text-slate-100 focus:outline-none focus:border-amber-500 transition">
-          <button type="submit" id="chat-send-btn" class="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs sm:text-sm transition-all transform hover:scale-105 flex items-center gap-1.5 shadow-lg cursor-pointer">
-            <i class="fa-solid fa-paper-plane"></i> <span class="hidden sm:inline" data-i18n="chat_send_btn">Enviar</span>
-          </button>
-        </form>
+      <div class="mt-4 bg-slate-950 p-4 rounded-lg border border-slate-800">
+        <h4 class="text-sm font-bold text-amber-300 mb-1">Selección de Conjuntos (Vista Juego)</h4>
+        <p class="text-xs text-slate-300">Si estás en <strong>Vista Juego</strong>, al entrar a tu álbum verás una cuadrícula con los 15 conjuntos. Toca uno para abrir su tablero 3x3. Para volver a la lista de conjuntos, toca la <strong>X</strong> en la esquina superior derecha. Los conjuntos con cromos nuevos tendrán un aviso rojo.</p>
       </div>
     </section>
 
-    <!-- TAB 5: ADMINISTRACIÓN -->
-    <section id="tab-admin" class="tab-content tab-animate space-y-4 sm:space-y-6 hidden">
-      <div class="bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-800 shadow-xl space-y-4 sm:space-y-6">
-        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <h2 class="font-cinzel text-xl sm:text-2xl font-bold text-slate-100 flex items-center gap-2">
-              <i class="fa-solid fa-shield-halved text-amber-400"></i> <span data-i18n="admin_title">Administración del Club</span>
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-400 mt-1" data-i18n="admin_desc">
-              Controla integrantes, sus privilegios de rol y restablece sus envíos diarios (3/3). Restablecimiento automático a la 1:00 PM (GMT-6).
+    <!-- SECCIÓN 2: PANEL DEL CLUB -->
+    <section class="step-card">
+      <div class="flex items-center gap-3 mb-4 border-b border-slate-800 pb-3">
+        <span class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg">2</span>
+        <h3 class="font-cinzel text-xl font-bold text-slate-100">Panel del Club</h3>
+      </div>
+      
+      <p class="text-sm text-slate-300 mb-4">El centro de mando. Aquí puedes ver de un vistazo cómo va el club entero. Haz clic en cualquier mago para ver su álbum.</p>
+      
+      <!-- Mockup Panel Mejorado -->
+      <div class="mockup-box overflow-x-auto">
+        <table class="w-full text-left text-[10px] sm:text-xs text-slate-300">
+          <thead class="bg-slate-950 text-slate-400 border-b border-slate-700">
+            <tr>
+              <th class="p-2">Mago</th>
+              <th class="p-2 text-center">Progreso</th>
+              <th class="p-2 text-center">Duplicados</th>
+              <th class="p-2 text-center">Dorados</th>
+              <th class="p-2 text-center">Álbumes</th>
+              <th class="p-2 text-center">Envíos</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-700">
+            <tr>
+              <td class="p-2 font-bold text-slate-100 flex items-center gap-1">
+                <i class="fa-solid fa-star text-amber-400 text-[10px]"></i> TAVO
+              </td>
+              <td class="p-2 text-center">
+                <div class="flex items-center justify-center gap-1">
+                  <div class="w-10 bg-slate-800 h-1.5 rounded-full overflow-hidden"><div class="bg-amber-500 h-full w-[75%]"></div></div>
+                  <span>75%</span>
+                </div>
+              </td>
+              <td class="p-2 text-center font-bold text-purple-400"><i class="fa-solid fa-copy"></i> 12</td>
+              <td class="p-2 text-center font-bold text-amber-400"><i class="fa-solid fa-crown"></i> 5/18</td>
+              <td class="p-2 text-center font-bold text-[#c2c2c2]"><i class="fa-solid fa-book-bookmark text-[#a353f3]"></i> 3</td>
+              <td class="p-2 text-center">
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border font-bold bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                  <i class="fa-solid fa-paper-plane text-[8px]"></i> 3/3
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="mt-3 text-xs text-slate-400 space-y-1">
+        <p><i class="fa-solid fa-book-bookmark text-[#a353f3]"></i> <strong>Álbumes:</strong> Es la cantidad de veces que han completado el álbum (trofeos).</p>
+        <p><i class="fa-solid fa-copy text-purple-400"></i> <strong>Duplicados:</strong> Cromos que tienen repetidos y sirven para enviar.</p>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 3: OPTIMIZADOR -->
+    <section class="step-card">
+      <div class="flex items-center gap-3 mb-4 border-b border-slate-800 pb-3">
+        <span class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg">3</span>
+        <h3 class="font-cinzel text-xl font-bold text-slate-100">Envíos Sugeridos</h3>
+      </div>
+      
+      <p class="text-sm text-slate-300 mb-4"><strong>Esta es la sección más importante.</strong> El algoritmo analiza los álbumes de los 30 magos y calcula la jugada perfecta: qué cromo enviar y a quién, para cerrar la mayor cantidad de sets en el menor tiempo posible. ¡Sigue sus recomendaciones para asegurar los trofeos de la semana!</p>
+      
+      <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 shadow-lg space-y-3 max-w-md mx-auto">
+        <div class="flex items-center gap-2 border-b border-slate-700 pb-2">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+          <span class="font-bold text-slate-200">TAVO</span>
+          <span class="ml-auto text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30"><i class="fa-solid fa-paper-plane"></i> 3/3</span>
+        </div>
+        <div class="bg-slate-950 border border-amber-500/40 rounded-xl p-3">
+          <div class="flex items-center gap-2 flex-wrap text-xs mb-2">
+            <span class="text-purple-300 font-bold bg-purple-950 px-2 py-0.5 rounded border border-purple-500/40">TAVO</span>
+            <span class="text-amber-400">➔</span>
+            <span class="text-emerald-300 font-bold bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/40">ALMA</span>
+            <span class="ml-auto text-[9px] font-black px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50">¡Casi cierra!</span>
+          </div>
+          <div class="text-xs text-slate-300">Conjunto 1 • Carta #1</div>
+          <div class="text-[10px] text-slate-500 mt-1">Le faltan 1 en este conjunto.</div>
+          <button class="w-full mt-2 py-1.5 bg-purple-600 text-white font-bold rounded text-xs"><i class="fa-solid fa-paper-plane mr-1"></i> Registrar Envío</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 4: DIAGRAMA DE FLUJO DE INTERCAMBIO -->
+    <section class="step-card">
+      <div class="flex items-center gap-3 mb-6 border-b border-slate-800 pb-3">
+        <span class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-right-left"></i></span>
+        <h3 class="font-cinzel text-xl font-bold text-slate-100">¿Cómo se hace un intercambio?</h3>
+      </div>
+      
+      <div class="relative max-w-lg mx-auto">
+        <!-- Línea vertical central -->
+        <div class="absolute left-[24px] top-6 bottom-6 w-0.5 bg-slate-700 z-0"></div>
+
+        <div class="space-y-6 relative z-10">
+          <!-- Paso 1 -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-amber-500 text-amber-500 flex items-center justify-center shrink-0 shadow-lg"><i class="fa-solid fa-eye"></i></div>
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex-1 shadow-md">
+              <h4 class="text-sm font-bold text-slate-200">1. Revisa el Optimizador</h4>
+              <p class="text-xs text-slate-400 mt-1">Entra a "Envíos Sugeridos" y mira a quién le sirve tu cromo duplicado.</p>
+            </div>
+          </div>
+
+          <!-- Paso 2 -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-purple-500 text-purple-500 flex items-center justify-center shrink-0 shadow-lg"><i class="fa-solid fa-mobile-screen"></i></div>
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex-1 shadow-md">
+              <h4 class="text-sm font-bold text-slate-200">2. Envía en el Juego</h4>
+              <p class="text-xs text-slate-400 mt-1">Abre el juego real en tu celular y envía el cromo al mago. (¡Solo hazlo si estás seguro!).</p>
+            </div>
+          </div>
+
+          <!-- Paso 3 -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-emerald-500 text-emerald-500 flex items-center justify-center shrink-0 shadow-lg"><i class="fa-solid fa-check"></i></div>
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex-1 shadow-md">
+              <h4 class="text-sm font-bold text-slate-200">3. Registra en la Web</h4>
+              <p class="text-xs text-slate-400 mt-1">Vuelve a la app y dale a "Registrar Envío". Tu cromo bajará en 1 y se descontará tu envío diario.</p>
+            </div>
+          </div>
+
+          <!-- Paso 4 -->
+          <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-900 border-2 border-indigo-400 text-indigo-400 flex items-center justify-center shrink-0 shadow-lg"><i class="fa-solid fa-envelope-open-text"></i></div>
+            <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl flex-1 shadow-md">
+              <h4 class="text-sm font-bold text-slate-200">4. El Receptor Confirma</h4>
+              <p class="text-xs text-slate-400 mt-1">Al receptor le saldrá un reloj de arena (⏳) y un aviso en su sobre (📩). Cuando le llegue en el juego, entrará a la web y presionará "Confirmar Recepción".</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECCIÓN 5: BUZÓN Y CHAT (EXPANDIDO) -->
+    <section class="step-card">
+      <div class="flex items-center gap-3 mb-4 border-b border-slate-800 pb-3">
+        <span class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-lg">4</span>
+        <h3 class="font-cinzel text-xl font-bold text-slate-100">El Buzón y el Chat</h3>
+      </div>
+      
+      <div class="space-y-8">
+        
+        <!-- Explicación del Buzón -->
+        <div>
+          <h4 class="text-sm font-bold text-amber-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-envelope"></i> Buzón de Entrada (Notificaciones)</h4>
+          <p class="text-xs text-slate-300 mb-3">El buzón es la bandeja de entrada de tus intercambios. Cuando alguien registra un envío hacia ti, te llegará una notificación aquí. <strong>El sobre arriba a la derecha se pondrá rojo con un número.</strong></p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Mockup Notificación Pendiente -->
+            <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+              <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">1. Te llega una notificación</p>
+              <div class="bg-slate-900 border border-slate-700 rounded p-2 flex flex-col gap-2">
+                <div class="text-[10px] text-amber-300 font-bold">Enviado por: ALMA</div>
+                <div class="text-[10px] text-slate-300 flex items-center gap-1.5"><span class="bg-purple-600 text-white px-1 rounded">5</span> Conjunto 9 • Carta #5</div>
+                <div class="flex gap-1 mt-1">
+                  <button class="flex-1 py-1 bg-slate-800 text-slate-400 rounded text-[9px] border border-slate-600">Aún no me llega</button>
+                  <button class="flex-1 py-1 bg-emerald-600 text-white font-bold rounded text-[9px]">Confirmar</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Mockup Resultado Confirmado -->
+            <div class="bg-slate-950 border border-slate-800 p-3 rounded-lg">
+              <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">2. Al confirmar (se va a tu álbum)</p>
+              <div class="bg-slate-900 border border-slate-700 rounded p-2 relative h-[86px] flex items-center justify-center">
+                <!-- Simulación de cromo con NUEVO -->
+                <div class="w-12 h-16 bg-slate-800 border border-slate-600 rounded flex items-center justify-center text-slate-300 font-bold relative">
+                  5
+                  <div class="new-badge">¡NUEVO!</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-3 bg-slate-950 p-3 rounded-lg border border-slate-800">
+            <p class="text-xs text-slate-400">
+              <strong>¿Qué pasa si toco "Aún no me llega"?</strong> Le enviamos un aviso automático al emisor por el chat para que revise si hizo el envío bien. Tu cromo se quedará con el reloj de arena (⏳) en tu álbum hasta que te llegue y lo confirmes.
             </p>
           </div>
-
-          <button id="admin-add-user-top-btn" onclick="openRegisterUserModal(true)" class="hidden w-full sm:w-auto px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold rounded-xl border border-slate-700 shadow-lg transition-all transform hover:scale-105 text-xs flex items-center justify-center gap-2 shrink-0 cursor-pointer">
-            <i class="fa-solid fa-user-plus"></i> <span data-i18n="btn_add_user_admin">+ Agregar Usuario</span>
-          </button>
         </div>
 
-        <div class="space-y-3">
-          <h3 class="text-xs sm:text-sm font-bold text-slate-300 uppercase tracking-wide flex items-center gap-2">
-            <i class="fa-solid fa-users-gear text-amber-400"></i> <span data-i18n="admin_members_list">Lista de Miembros y Envíos</span>
-          </h3>
+        <hr class="border-slate-800">
 
-          <div id="admin-members-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+        <!-- Explicación del Chat -->
+        <div>
+          <h4 class="text-sm font-bold text-indigo-300 mb-3 flex items-center gap-2"><i class="fa-solid fa-comments"></i> Chat Mágico (Para hablar y coordinar)</h4>
+          <p class="text-xs text-slate-300 mb-3">El chat tiene <strong>dos pestañas</strong> en la parte superior para mantener el orden.</p>
+          
+          <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+            <!-- Tabs -->
+            <div class="flex bg-slate-900 border-b border-slate-800">
+              <div class="flex-1 text-center py-2 text-[10px] font-bold text-amber-400 border-b-2 border-amber-400 bg-slate-800/50">Chat General</div>
+              <div class="flex-1 text-center py-2 text-[10px] font-bold text-slate-500">Historial de Intercambios</div>
+            </div>
+            
+            <!-- Mensajes -->
+            <div class="p-3 space-y-3 h-40 overflow-y-auto">
+              <div class="text-[10px] text-slate-400 italic text-center">📦 TAVO ha enviado el cromo #3 a ALMA</div>
+              
+              <div class="flex flex-col items-start">
+                <span class="text-[9px] font-bold text-emerald-400 mb-1">ALMA</span>
+                <div class="bg-slate-800 text-slate-200 text-xs px-2 py-1.5 rounded-lg rounded-tl-none border border-slate-700">
+                  ¡Gracias por el cromo! 🙌
+                </div>
+                <div class="flex gap-1 mt-1">
+                  <span class="reaction-chip">❤️ 2</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="mt-3 text-xs text-slate-400 space-y-2">
+            <p><strong>💬 Chat General:</strong> Es donde hablan los magos. Mantén presionado o haz clic en el icono de la carita al lado de un mensaje para reaccionar con emojis (❤️, 👍, etc).</p>
+            <p><strong>🔄 Historial de Intercambios:</strong> Aquí se guardan automáticamente los registros de envíos y recepciones. Así los mensajes importantes de la conversación no se pierden.</p>
+          </div>
         </div>
+
       </div>
     </section>
 
   </main>
 
-  <!-- MODAL: CREAR / REGISTRAR USUARIO -->
-  <div id="modal-register-user" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 tab-animate">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 id="modal-reg-title" class="font-cinzel font-bold text-base sm:text-lg text-slate-100 flex items-center gap-2">
-          <i class="fa-solid fa-user-plus text-amber-400"></i> <span data-i18n="modal_reg_title">Crear Nuevo Usuario</span>
-        </h3>
-        <button onclick="closeRegisterUserModal()" class="text-slate-400 hover:text-slate-200">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-300 font-semibold" data-i18n="label_username">Nombre de Usuario:</label>
-          <input type="text" id="reg-username" placeholder="EJ: TAVO, ALMA*AZUL" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 uppercase font-semibold mt-1">
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-300 font-semibold" data-i18n="label_pin">PIN de Seguridad (4 dígitos o clave):</label>
-          <input type="password" id="reg-pin" placeholder="****" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-semibold mt-1">
-        </div>
-
-        <div id="admin-role-toggle" class="hidden flex items-center gap-2 pt-1">
-          <input type="checkbox" id="reg-is-admin" class="rounded bg-slate-950 border-slate-700 text-amber-500 focus:ring-0 cursor-pointer">
-          <label for="reg-is-admin" class="text-xs text-amber-400 font-bold cursor-pointer" data-i18n="label_grant_admin">Otorgar privilegios de Administrador</label>
-        </div>
-
-        <p id="reg-error-msg" class="text-xs text-red-400 font-medium hidden"></p>
-      </div>
-
-      <div class="flex justify-end gap-3 pt-2">
-        <button onclick="closeRegisterUserModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition" data-i18n="btn_cancel">Cancelar</button>
-        <button onclick="submitRegisterUser()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 rounded-xl text-xs shadow-lg transition" data-i18n="btn_save">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CAMBIAR NOMBRE DE USUARIO -->
-  <div id="modal-rename-member" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 tab-animate">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-cinzel font-bold text-base sm:text-lg text-slate-100 flex items-center gap-2">
-          <i class="fa-solid fa-pen text-amber-400"></i> <span data-i18n="modal_rename_title">Editar Nombre</span>
-        </h3>
-        <button onclick="closeRenameMemberModal()" class="text-slate-400 hover:text-slate-200">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-      <div class="space-y-2">
-        <label class="text-xs text-slate-300 font-semibold" data-i18n="label_new_username">Nuevo Nombre de Integrante:</label>
-        <input type="text" id="rename-member-name-input" placeholder="Ej: TAVO PRIME" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 uppercase font-semibold">
-        <p id="modal-rename-error-msg" class="text-xs text-red-400 font-medium hidden"></p>
-      </div>
-      <div class="flex justify-end gap-3 pt-2">
-        <button onclick="closeRenameMemberModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition" data-i18n="btn_cancel">Cancelar</button>
-        <button onclick="submitRenameMember()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold border border-slate-700 rounded-xl text-xs shadow-lg transition" data-i18n="btn_save">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: LOGIN DE USUARIO -->
-  <div id="modal-login-user" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 max-w-md w-full shadow-2xl space-y-4 tab-animate">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="font-cinzel font-bold text-base sm:text-lg text-slate-100 flex items-center gap-2">
-          <i class="fa-solid fa-key text-amber-400"></i> <span data-i18n="modal_login_title">Iniciar Sesión</span>
-        </h3>
-        <button onclick="closeLoginUserModal()" class="text-slate-400 hover:text-slate-200">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs text-slate-300 font-semibold" data-i18n="label_select_user">Selecciona tu Usuario:</label>
-          <select id="login-user-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-semibold mt-1"></select>
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-300 font-semibold" data-i18n="label_login_pin">PIN de Acceso:</label>
-          <input type="password" id="login-pin" placeholder="****" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 font-semibold mt-1">
-        </div>
-
-        <p id="login-error-msg" class="text-xs text-red-400 font-medium hidden"></p>
-      </div>
-
-      <div class="flex justify-end gap-3 pt-2">
-        <button onclick="closeLoginUserModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition" data-i18n="btn_cancel">Cancelar</button>
-        <button onclick="submitLoginUser()" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition transform hover:scale-105" data-i18n="btn_enter">Ingresar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: CELEBRACIÓN ÁLBUM COMPLETADO -->
-  <div id="modal-grand-celebration" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md hidden flex items-center justify-center p-4">
-    <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-indigo-950 border-2 border-amber-400 rounded-3xl p-6 sm:p-8 max-w-lg w-full text-center shadow-[0_0_50px_rgba(245,158,11,0.5)] space-y-6 relative overflow-hidden tab-animate">
-      <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-200 flex items-center justify-center text-slate-950 text-3xl sm:text-4xl font-extrabold shadow-lg shadow-amber-500/40 animate-bounce">
-        <i class="fa-solid fa-trophy"></i>
-      </div>
-      <div class="space-y-2">
-        <h2 class="font-cinzel text-2xl sm:text-3xl font-black text-amber-300 tracking-wider" data-i18n="modal_completed_title">¡ÁLBUM COMPLETADO!</h2>
-        <p class="text-xs sm:text-sm text-slate-300 font-medium"><span data-i18n="modal_completed_desc1">¡Felicidades,</span> <strong id="celebration-player-name" class="text-amber-400">---</strong>! <span data-i18n="modal_completed_desc2">Has recolectado los 135 cromos.</span></p>
-      </div>
-      <button onclick="closeGrandCelebration()" class="w-full py-3 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-slate-950 font-black rounded-xl text-xs sm:text-sm shadow-xl transition transform hover:scale-105 cursor-pointer" data-i18n="btn_continue">¡CONTINUAR MÁGICAMENTE!</button>
-    </div>
-  </div>
-
-  <!-- FIREBASE MODULES CON ESCUDO ANTI-BORRADO (LOCAL STORAGE GUARD) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDs16LzjYHsz-qPr72Mp05EkISaDsfpxsg",
-      authDomain: "magos-famosos.firebaseapp.com",
-      projectId: "magos-famosos",
-      storageBucket: "magos-famosos.firebasestorage.app",
-      messagingSenderId: "439661655958",
-      appId: "1:439661655958:web:a3a41f65f8d73e7cbacfb7",
-      databaseURL: "https://magos-famosos-default-rtdb.firebaseio.com"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const clubRef = ref(db, 'clubState');
-    const chatRef = ref(db, 'chatMessages');
-
-    // Carga inicial del almacenamiento local (respaldo de seguridad)
-    const localSavedStateRaw = localStorage.getItem('magos_famosos_backup_state');
-    let localSavedState = null;
-    try {
-      if (localSavedStateRaw) localSavedState = JSON.parse(localSavedStateRaw);
-    } catch(e) {}
-
-    onValue(clubRef, (snapshot) => {
-      const cloudData = snapshot.val();
-
-      if (cloudData && cloudData.players && cloudData.players.length > 0) {
-        // La nube tiene datos válidos
-        window.clubState = cloudData;
-        localStorage.setItem('magos_famosos_backup_state', JSON.stringify(cloudData));
-      } else {
-        // ESCUDO ANTI-BORRADO: Si la nube viene nula/vacía pero tenemos copia local más completa
-        if (localSavedState && localSavedState.players && localSavedState.players.length > 0) {
-          window.clubState = localSavedState;
-          window.saveStateToCloud(); // Auto-reparar la nube vacía
-        } else {
-          // Si todo está vacío (reinicio limpio de fábrica)
-          if (!window.clubState) {
-            window.clubState = { lastResetDate: '', players: [] };
-          }
-        }
-      }
-
-      window.checkDailyResetGMT6();
-      window.renderApp();
-      updateSyncStatus(true);
-    }, (error) => {
-      console.error("Error conectando con Firebase:", error);
-      updateSyncStatus(false);
-    });
-
-    onValue(chatRef, (snapshot) => {
-      const messagesVal = snapshot.val();
-      window.rawChatData = messagesVal || {};
-      window.renderChat();
-    });
-
-    window.saveStateToCloud = function() {
-      if (window.clubState) {
-        // Guardar siempre en localstorage como respaldo de emergencia
-        localStorage.setItem('magos_famosos_backup_state', JSON.stringify(window.clubState));
-        // Guardar en la nube
-        set(clubRef, window.clubState).catch(err => console.error("Error guardando en nube:", err));
-      }
-    };
-
-    window.sendChatMessageToCloud = function(msgObj) {
-      push(chatRef, msgObj).catch(err => console.error("Error enviando mensaje:", err));
-    };
-
-    window.deleteChatMessageFromCloud = function(msgKey) {
-      const singleMsgRef = ref(db, `chatMessages/${msgKey}`);
-      remove(singleMsgRef).catch(err => console.error("Error borrando mensaje:", err));
-    };
-
-    window.clearAllChatFromCloud = function() {
-      set(chatRef, null).catch(err => console.error("Error limpiando chat:", err));
-    };
-
-    function updateSyncStatus(isOnline) {
-      const badge = document.getElementById('cloud-sync-status');
-      if (!badge) return;
-      const lang = window.currentLang || 'es';
-      const textSynced = translations[lang].synced || 'Sincronizado';
-      const textLocal = translations[lang].local_mode || 'Modo Local';
-
-      if (isOnline) {
-        badge.className = "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 transition-all";
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${textSynced}`;
-      } else {
-        badge.className = "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] bg-red-500/10 text-red-400 border border-red-500/30 transition-all";
-        badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> ${textLocal}`;
-      }
-    }
-  </script>
-
   <script>
-    const FLAG_SVGS = {
-      es: `<svg class="w-4 h-4 rounded-full object-cover" viewBox="0 0 512 512"><path fill="#c60b1e" d="M0 0h512v512H0z"/><path fill="#ffc400" d="M0 128h512v256H0z"/></svg>`,
-      en: `<svg class="w-4 h-4 rounded-full object-cover" viewBox="0 0 512 512"><path fill="#bd3d44" d="M0 0h512v512H0z"/><path fill="#fff" d="M0 39.4h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.4H0zm0 78.8h512v39.4H0z"/><path fill="#192f5d" d="M0 0h256v275.7H0z"/></svg>`,
-      pt: `<svg class="w-4 h-4 rounded-full object-cover" viewBox="0 0 512 512"><path fill="#229e46" d="M0 0h512v512H0z"/><path fill="#f8e000" d="m256 64 216 192L256 448 40 256z"/><circle cx="256" cy="256" r="96" fill="#002776"/></svg>`
-    };
+    // --- LÓGICA DEL SIMULADOR DE CASILLAS ---
+    let cardsState = [0, 0, 0, 0, 0, 0, 0, 0, 0]; 
+    let currentView = 'classic'; // Vista Extendida por defecto
+    let isDragging = false;
+    let isScrolling = false;
+    let isLongPressAction = false;
+    let pointerDownActive = false;
+    let dragPath = [];
+    let initialStatesMap = {};
+    let longPressTimer = null;
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let startCardIdx = null;
+    
+    const MOVE_THRESHOLD = 8;
+    const LONG_PRESS_MS = 500;
 
-    const translations = {
-      es: {
-        subtitle: "Momentos Mágicos • Intercambio",
-        synced: "Sincronizado",
-        local_mode: "Modo Local",
-        stat_members: "Miembros:",
-        stat_progress: "Progreso Club:",
-        stat_duplicates: "Duplicados Totales:",
-        add_new: "+ Nuevo",
-        nav_club: "Panel del Club",
-        nav_album: "Mi Álbum",
-        nav_sugeridos: "Envíos Sugeridos",
-        nav_chat: "Chat Mágico",
-        nav_admin: "Administración",
-        nav_club_short: "Club",
-        nav_album_short: "Álbum",
-        nav_sugeridos_short: "Sugeridos",
-        nav_chat_short: "Chat",
-        nav_admin_short: "Admin",
-        club_title: "Panel de Integrantes",
-        club_desc: "Resumen global del club. Toca a cualquier miembro para ver o consultar su álbum.",
-        btn_add_member: "Crear Mi Usuario",
-        th_member: "Integrante",
-        th_progress: "Progreso",
-        th_missing: "Faltantes",
-        th_duplicates: "Duplicados",
-        th_gold: "Dorados",
-        th_sends: "Envíos Hoy",
-        th_last_update: "Última Act.",
-        th_action: "Acción",
-        btn_edit: "Editar",
-        btn_reset: "Reiniciar",
-        read_only_mode: "MODO LECTURA",
-        album_instructions: "<strong>Toque corto:</strong> Cambia estado • <strong>Mantener presionado:</strong> Casilla a Gris.",
-        stat_obtained_title: "Obtenidos",
-        stat_duplicates_title: "Duplicados",
-        stat_gold_title: "Dorados",
-        stat_missing_title: "Faltantes",
-        legend_title: "Leyenda:",
-        legend_missing: "Faltante",
-        legend_obtained: "Obtenido",
-        legend_duplicate: "Duplicado",
-        legend_gold: "Dorado",
-        optimizer_title: "Centro de Intercambios Sugeridos",
-        optimizer_desc: "Recomendaciones inteligentes priorizadas para que el club avance y cierre álbumes juntos.",
-        filter_by: "Filtrar por:",
-        global_all: "🌐 TODO EL CLUB (GLOBAL)",
-        only_from: "👤 SOLO DE:",
-        recommended_title: "Envíos Más Óptimos Recomendados",
-        btn_refresh: "Actualizar",
-        register_send: "Registrar Envío",
-        sends: "Envíos",
-        almost_closed: "¡Casi cierra conjunto!",
-        card_set: "Conjunto",
-        card_num: "Carta",
-        missing_in_set: "Le faltan",
-        missing_in_set_tail: "en este conjunto.",
-        global_missing: "Faltantes globales de",
-        no_suggestions: "No hay sugerencias de envío pendientes en este momento para la selección. ¡Todos están al día!",
-        chat_header_title: "Chat Mágico del Club",
-        chat_header_desc: "Coordinen intercambios de cromos y envíos diarios en tiempo real.",
-        chat_clear_btn: "Vaciar Chat",
-        chat_live: "En Vivo",
-        chat_send_btn: "Enviar",
-        chat_placeholder_logged: "Escribe un mensaje para el club...",
-        chat_placeholder_guest: "Inicia sesión para participar en el chat...",
-        chat_no_messages: "No hay mensajes aún. ¡Sé el primero en escribir!",
-        chat_guest_notice: "Debes iniciar sesión para poder enviar mensajes en el chat.",
-        admin_title: "Administración del Club",
-        admin_desc: "Controla integrantes, sus privilegios de rol y restablece sus envíos diarios (3/3). Restablecimiento automático a la 1:00 PM (GMT-6).",
-        btn_add_user_admin: "+ Agregar Usuario",
-        admin_members_list: "Lista de Miembros y Envíos",
-        admin_access_restricted: "Acceso Restringido. Inicia sesión con una cuenta de Administrador para gestionar el club.",
-        modal_reg_title: "Crear Nuevo Usuario",
-        label_username: "Nombre de Usuario:",
-        label_pin: "PIN de Seguridad (4 dígitos o clave):",
-        label_grant_admin: "Otorgar privilegios de Administrador",
-        modal_rename_title: "Editar Nombre",
-        label_new_username: "Nuevo Nombre de Integrante:",
-        modal_login_title: "Iniciar Sesión",
-        label_select_user: "Selecciona tu Usuario:",
-        label_login_pin: "PIN de Acceso:",
-        btn_enter: "Ingresar",
-        btn_cancel: "Cancelar",
-        btn_save: "Guardar",
-        modal_completed_title: "¡ÁLBUM COMPLETADO!",
-        modal_completed_desc1: "¡Felicidades,",
-        modal_completed_desc2: "Has recolectado los 135 cromos.",
-        btn_continue: "¡CONTINUAR MÁGICAMENTE!",
-        set_completed: "¡COMPLETO!",
-        updated_label: "Actualizado:"
-      },
-      en: {
-        subtitle: "Magical Moments • Trading",
-        synced: "Synced",
-        local_mode: "Local Mode",
-        stat_members: "Members:",
-        stat_progress: "Club Progress:",
-        stat_duplicates: "Total Duplicates:",
-        add_new: "+ New",
-        nav_club: "Club Dashboard",
-        nav_album: "My Album",
-        nav_sugeridos: "Suggested Trades",
-        nav_chat: "Magical Chat",
-        nav_admin: "Management",
-        nav_club_short: "Club",
-        nav_album_short: "Album",
-        nav_sugeridos_short: "Suggested",
-        nav_chat_short: "Chat",
-        nav_admin_short: "Admin",
-        club_title: "Members Dashboard",
-        club_desc: "Global club summary. Tap any member to view their album.",
-        btn_add_member: "Create User",
-        th_member: "Member",
-        th_progress: "Progress",
-        th_missing: "Missing",
-        th_duplicates: "Duplicates",
-        th_gold: "Gold",
-        th_sends: "Today Sends",
-        th_last_update: "Last Act.",
-        th_action: "Action",
-        btn_edit: "Edit",
-        btn_reset: "Reset",
-        read_only_mode: "READ-ONLY MODE",
-        album_instructions: "<strong>Short Tap:</strong> Toggle status • <strong>Hold:</strong> Reset slot to Grey.",
-        stat_obtained_title: "Obtained",
-        stat_duplicates_title: "Duplicates",
-        stat_gold_title: "Gold Cards",
-        stat_missing_title: "Missing",
-        legend_title: "Legend:",
-        legend_missing: "Missing",
-        legend_obtained: "Obtained",
-        legend_duplicate: "Duplicate",
-        legend_gold: "Gold",
-        optimizer_title: "Suggested Trades Center",
-        optimizer_desc: "Smart prioritized recommendations for the club to close sets and albums together.",
-        filter_by: "Filter by:",
-        global_all: "🌐 ALL CLUB (GLOBAL)",
-        only_from: "👤 ONLY FROM:",
-        recommended_title: "Top Recommended Trades",
-        btn_refresh: "Refresh",
-        register_send: "Register Send",
-        sends: "Sends",
-        almost_closed: "Almost closes set!",
-        card_set: "Set",
-        card_num: "Card",
-        missing_in_set: "Needs",
-        missing_in_set_tail: "more in this set.",
-        global_missing: "Global missing for",
-        no_suggestions: "No pending trade suggestions at this moment for this selection. Everyone is up to date!",
-        chat_header_title: "Club Magical Chat",
-        chat_header_desc: "Coordinate card trades and daily sends in real time.",
-        chat_clear_btn: "Clear Chat",
-        chat_live: "Live",
-        chat_send_btn: "Send",
-        chat_placeholder_logged: "Write a message for the club...",
-        chat_placeholder_guest: "Log in to join the chat...",
-        chat_no_messages: "No messages yet. Be the first to write!",
-        chat_guest_notice: "You must log in to send messages in the chat.",
-        admin_title: "Club Administration",
-        admin_desc: "Manage members, role privileges, and reset daily sends (3/3). Auto reset at 1:00 PM (GMT-6).",
-        btn_add_user_admin: "+ Add User",
-        admin_members_list: "Members List & Sends",
-        admin_access_restricted: "Access Restricted. Log in with an Admin account to manage the club.",
-        modal_reg_title: "Create New User",
-        label_username: "Username:",
-        label_pin: "Security PIN (4 digits or password):",
-        label_grant_admin: "Grant Admin privileges",
-        modal_rename_title: "Edit Name",
-        label_new_username: "New Member Name:",
-        modal_login_title: "Log In",
-        label_select_user: "Select Your User:",
-        label_login_pin: "Access PIN:",
-        btn_enter: "Enter",
-        btn_cancel: "Cancel",
-        btn_save: "Save",
-        modal_completed_title: "ALBUM COMPLETED!",
-        modal_completed_desc1: "Congratulations,",
-        modal_completed_desc2: "You have collected all 135 cards.",
-        btn_continue: "CONTINUE MAGICALLY!",
-        set_completed: "COMPLETED!",
-        updated_label: "Updated:"
-      },
-      pt: {
-        subtitle: "Momentos Mágicos • Trocas",
-        synced: "Sincronizado",
-        local_mode: "Modo Local",
-        stat_members: "Membros:",
-        stat_progress: "Progresso do Clube:",
-        stat_duplicates: "Duplicadas Totais:",
-        add_new: "+ Novo",
-        nav_club: "Painel do Clube",
-        nav_album: "Meu Álbum",
-        nav_sugeridos: "Envios Sugeridos",
-        nav_chat: "Chat Mágico",
-        nav_admin: "Administração",
-        nav_club_short: "Clube",
-        nav_album_short: "Álbum",
-        nav_sugeridos_short: "Sugeridos",
-        nav_chat_short: "Chat",
-        nav_admin_short: "Admin",
-        club_title: "Painel de Membros",
-        club_desc: "Resumo geral do clube. Toque em qualquer membro para ver seu álbum.",
-        btn_add_member: "Criar Usuário",
-        th_member: "Membro",
-        th_progress: "Progresso",
-        th_missing: "Faltando",
-        th_duplicates: "Duplicadas",
-        th_gold: "Douradas",
-        th_sends: "Envios Hoje",
-        th_last_update: "Última Ativ.",
-        th_action: "Ação",
-        btn_edit: "Editar",
-        btn_reset: "Reiniciar",
-        read_only_mode: "MODO LEITURA",
-        album_instructions: "<strong>Toque curto:</strong> Muda estado • <strong>Segurar:</strong> Reseta para Cinza.",
-        stat_obtained_title: "Obtidas",
-        stat_duplicates_title: "Duplicadas",
-        stat_gold_title: "Douradas",
-        stat_missing_title: "Faltando",
-        legend_title: "Legenda:",
-        legend_missing: "Faltando",
-        legend_obtained: "Obtida",
-        legend_duplicate: "Duplicada",
-        legend_gold: "Dourada",
-        optimizer_title: "Centro de Trocas Sugeridas",
-        optimizer_desc: "Recomendações inteligentes priorizadas para o clube fechar conjuntos juntos.",
-        filter_by: "Filtrar por:",
-        global_all: "🌐 TODO O CLUBE (GLOBAL)",
-        only_from: "👤 APENAS DE:",
-        recommended_title: "Envios Mais Recomendados",
-        btn_refresh: "Atualizar",
-        register_send: "Registrar Envio",
-        sends: "Envios",
-        almost_closed: "Quase fecha o conjunto!",
-        card_set: "Conjunto",
-        card_num: "Carta",
-        missing_in_set: "Faltam",
-        missing_in_set_tail: "neste conjunto.",
-        global_missing: "Faltantes globais de",
-        no_suggestions: "Nenhuma sugestão de envio pendente no momento para esta seleção. Todos estão em dia!",
-        chat_header_title: "Chat Mágico do Clube",
-        chat_header_desc: "Coordene trocas de figurinhas e envios diários em tempo real.",
-        chat_clear_btn: "Limpar Chat",
-        chat_live: "Ao Vivo",
-        chat_send_btn: "Enviar",
-        chat_placeholder_logged: "Escreva uma mensagem para o clube...",
-        chat_placeholder_guest: "Faça login para participar do chat...",
-        chat_no_messages: "Nenhuma mensagem aún. Seja o primeiro a escrever!",
-        chat_guest_notice: "Você precisa fazer login para enviar mensagens no chat.",
-        admin_title: "Administração do Clube",
-        admin_desc: "Gerencie membros, privilégios de função e reinicie envios diários (3/3). Reinício automático às 13:00 (GMT-6).",
-        btn_add_user_admin: "+ Adicionar Usuário",
-        admin_members_list: "Lista de Membros e Envios",
-        admin_access_restricted: "Acesso Restrito. Faça login com uma conta de Administrador para gerenciar o clube.",
-        modal_reg_title: "Criar Novo Usuário",
-        label_username: "Nome de Usuário:",
-        label_pin: "PIN de Segurança (4 dígitos ou senha):",
-        label_grant_admin: "Conceder privilégios de Administrador",
-        modal_rename_title: "Editar Nome",
-        label_new_username: "Novo Nome do Membro:",
-        modal_login_title: "Iniciar Sessão",
-        label_select_user: "Selecione seu Usuário:",
-        label_login_pin: "PIN de Acesso:",
-        btn_enter: "Entrar",
-        btn_cancel: "Cancelar",
-        btn_save: "Salvar",
-        modal_completed_title: "ÁLBUM COMPLETO!",
-        modal_completed_desc1: "Parabéns,",
-        modal_completed_desc2: "Você coletou as 135 figurinhas.",
-        btn_continue: "CONTINUAR MAGICAMENTE!",
-        set_completed: "COMPLETO!",
-        updated_label: "Atualizado:"
-      }
-    };
+    const container = document.getElementById('practice-container');
 
-    const TOTAL_SETS = 15;
-    const CARDS_PER_SET = 9;
-    const TOTAL_CARDS = TOTAL_SETS * CARDS_PER_SET;
-
-    window.currentLang = localStorage.getItem('magos_famosos_lang') || 'es';
-    window.localAuthPlayerId = localStorage.getItem('magos_famosos_auth_id') || null;
-    window.localViewPlayerId = null; 
-    window.rawChatData = {};
-
-    window.clubState = {
-      lastResetDate: '',
-      players: []
-    };
-
-    function isGoldCardSlot(setNumber, cardIndex) {
-      if (setNumber === 7 && cardIndex === 8) return true;
-      if (setNumber >= 8 && setNumber <= 14 && (cardIndex === 7 || cardIndex === 8)) return true;
-      if (setNumber === 15 && (cardIndex === 6 || cardIndex === 7 || cardIndex === 8)) return true;
-      return false;
-    }
-
-    function getFormattedTimestamp() {
-      const now = new Date();
-      const options = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
-      return now.toLocaleString(window.currentLang === 'pt' ? 'pt-BR' : window.currentLang === 'en' ? 'en-US' : 'es-ES', options);
-    }
-
-    function getSendBadgeClass(sends) {
-      if (sends >= 2) {
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20';
-      } else if (sends === 1) {
-        return 'bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20';
-      } else {
-        return 'bg-red-500/10 text-red-400 border-red-500/30 hover:bg-red-500/20';
-      }
-    }
-
-    function generateEmptyAlbum() {
-      const album = [];
-      for (let s = 1; s <= TOTAL_SETS; s++) {
-        album.push({ setNumber: s, cards: new Array(CARDS_PER_SET).fill(0) });
-      }
-      return album;
-    }
-
-    window.onload = function() {
-      applyLanguage();
-      renderApp();
-    };
-
-    function changeLanguage(lang) {
-      window.currentLang = lang;
-      localStorage.setItem('magos_famosos_lang', lang);
-      applyLanguage();
-      renderApp();
-    }
-
-    function applyLanguage() {
-      const lang = window.currentLang;
-      const dict = translations[lang] || translations.es;
-
-      document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (dict[key]) el.innerHTML = dict[key];
-      });
-
-      const langSelect = document.getElementById('language-select');
-      if (langSelect) langSelect.value = lang;
-
-      const flagIcon = document.getElementById('lang-flag-icon');
-      if (flagIcon && FLAG_SVGS[lang]) flagIcon.innerHTML = FLAG_SVGS[lang];
-    }
-
-    function checkDailyResetGMT6() {
-      const now = new Date();
-      const gmt6Offset = -6 * 60;
-      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-      const gmt6Date = new Date(utcTime + (gmt6Offset * 60000));
-
-      const todayKey = `${gmt6Date.getFullYear()}-${String(gmt6Date.getMonth() + 1).padStart(2, '0')}-${String(gmt6Date.getDate()).padStart(2, '0')}`;
-
-      if (gmt6Date.getHours() >= 13 && window.clubState.lastResetDate !== todayKey) {
-        if (window.clubState.players) {
-          window.clubState.players.forEach(p => p.sendsRemaining = 3);
-        }
-        window.clubState.lastResetDate = todayKey;
-        if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      }
-    }
-
-    function renderApp() {
-      applyLanguage();
-      updateAuthUI();
-      updateViewSelector();
-      updateHeaderStats();
-      renderClubTab();
-      renderAlbumTab();
-      renderAdminTab();
-      updateOptimizerFilterOptions();
-      calculateOptimizations();
-      renderChat();
-    }
-
-    function updateAuthUI() {
-      const icon = document.getElementById('user-status-icon');
-      const btnLabel = document.getElementById('auth-btn-label');
-      const headerAddNewBtn = document.getElementById('header-add-new-btn');
-      const heroCreateUserBtn = document.getElementById('hero-create-user-btn');
-      
-      const loggedUser = window.clubState.players ? window.clubState.players.find(p => p.id === window.localAuthPlayerId) : null;
-
-      if (loggedUser) {
-        if (icon) icon.className = "fa-solid fa-user-check text-emerald-400 text-xs sm:text-sm";
-        if (btnLabel) btnLabel.innerText = "Salir";
-        if (headerAddNewBtn) headerAddNewBtn.classList.add('hidden');
-        if (heroCreateUserBtn) heroCreateUserBtn.classList.add('hidden');
-      } else {
-        if (icon) icon.className = "fa-solid fa-user-slash text-slate-400 text-xs sm:text-sm";
-        if (btnLabel) btnLabel.innerText = "Login";
-        if (headerAddNewBtn) headerAddNewBtn.classList.remove('hidden');
-        if (heroCreateUserBtn) heroCreateUserBtn.classList.remove('hidden');
-      }
-    }
-
-    function handleAuthAction() {
-      if (window.localAuthPlayerId) {
-        window.localAuthPlayerId = null;
-        localStorage.removeItem('magos_famosos_auth_id');
-        renderApp();
-      } else {
-        openLoginUserModal();
-      }
-    }
-
-    function updateViewSelector() {
-      const select = document.getElementById('active-view-select');
-      if (!select) return;
-      select.innerHTML = '';
-
-      if (!window.clubState.players || window.clubState.players.length === 0) {
-        const opt = document.createElement('option');
-        opt.textContent = "SIN USUARIOS";
-        select.appendChild(opt);
-        return;
-      }
-
-      if (!window.localViewPlayerId || !window.clubState.players.some(p => p.id === window.localViewPlayerId)) {
-        window.localViewPlayerId = window.localAuthPlayerId || window.clubState.players[0].id;
-      }
-
-      window.clubState.players.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.id;
-        opt.textContent = p.name + (p.id === window.localAuthPlayerId ? ' (TÚ)' : '');
-        if (p.id === window.localViewPlayerId) opt.selected = true;
-        select.appendChild(opt);
-      });
-    }
-
-    function changeViewedPlayer(newId) {
-      window.localViewPlayerId = newId;
-      renderApp();
-    }
-
-    function updateHeaderStats() {
-      const members = window.clubState.players || [];
-      document.getElementById('header-stat-members').innerText = `${members.length}/30`;
-
-      let totalCardsObtained = 0;
-      let totalDuplicates = 0;
-
-      members.forEach(p => {
-        if (p.album) {
-          p.album.forEach((setObj) => {
-            setObj.cards.forEach((val, cIdx) => {
-              const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
-              if (isGold) {
-                if (val === 3) totalCardsObtained++;
-              } else {
-                if (val >= 1) totalCardsObtained++;
-                if (val === 2) totalDuplicates++;
-              }
-            });
-          });
-        }
-      });
-
-      const maxPossible = members.length * TOTAL_CARDS;
-      const globalPercent = maxPossible > 0 ? Math.round((totalCardsObtained / maxPossible) * 100) : 0;
-
-      document.getElementById('header-stat-progress').innerText = `${globalPercent}%`;
-      document.getElementById('header-stat-duplicates').innerText = totalDuplicates;
-    }
-
-    function renderClubTab() {
-      const tbody = document.getElementById('club-members-tbody');
-      const mobileContainer = document.getElementById('club-members-mobile-cards');
-      const dict = translations[window.currentLang] || translations.es;
-      
-      if (tbody) tbody.innerHTML = '';
-      if (mobileContainer) mobileContainer.innerHTML = '';
-
-      if (!window.clubState.players || window.clubState.players.length === 0) {
-        if (mobileContainer) mobileContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">No hay integrantes creados. ¡Crea el tuyo con el botón superior!</p>`;
-        return;
-      }
-
-      window.clubState.players.forEach(player => {
-        let obtained = 0, duplicates = 0, missing = 0, goldObtained = 0;
-
-        if (player.album) {
-          player.album.forEach(setObj => {
-            setObj.cards.forEach((val, cIdx) => {
-              const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
-              if (isGold) {
-                if (val === 3) { obtained++; goldObtained++; }
-                else missing++;
-              } else {
-                if (val >= 1) obtained++;
-                if (val === 2) duplicates++;
-                if (val === 0) missing++;
-              }
-            });
-          });
-        }
-
-        const percent = Math.round((obtained / TOTAL_CARDS) * 100);
-        const sends = player.sendsRemaining ?? 3;
-        const sendBadgeStyle = getSendBadgeClass(sends);
-        const lastUp = player.lastUpdated || '---';
-
-        // Móvil
-        if (mobileContainer) {
-          const card = document.createElement('div');
-          card.className = 'bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-3 shadow-md cursor-pointer transition-all hover:scale-[1.01] hover:border-slate-700';
-          card.onclick = function() {
-            changeViewedPlayer(player.id);
-            switchTab('album');
-          };
-
-          card.innerHTML = `
-            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-              <div class="font-bold text-slate-100 text-sm flex items-center gap-1.5">
-                ${player.id === window.localAuthPlayerId ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
-                ${player.name}
-              </div>
-              <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg text-xs font-bold border transition ${sendBadgeStyle}">
-                <i class="fa-solid fa-paper-plane text-[9px]"></i> ${dict.sends}: ${sends}/3
-              </span>
-            </div>
-
-            <div class="space-y-1">
-              <div class="flex justify-between text-[11px] text-slate-400 font-semibold">
-                <span>${dict.th_progress}: ${percent}%</span>
-                <span>${dict.th_missing}: ${missing}</span>
-              </div>
-              <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
-                <div class="bg-amber-500 h-full transition-all duration-500" style="width: ${percent}%"></div>
-              </div>
-            </div>
-
-            <div class="flex justify-between items-center text-[11px] pt-1">
-              <div class="flex gap-3">
-                <span class="text-purple-400 font-bold"><i class="fa-solid fa-copy"></i> ${duplicates} dup</span>
-                <span class="text-amber-400 font-bold"><i class="fa-solid fa-crown"></i> ${goldObtained}/18 ★</span>
-              </div>
-              <span class="text-slate-500 text-[10px] font-mono">${lastUp}</span>
-            </div>
-          `;
-          mobileContainer.appendChild(card);
-        }
-
-        // PC
-        if (tbody) {
-          const tr = document.createElement('tr');
-          tr.className = 'hover:bg-slate-800/40 transition cursor-pointer';
-          tr.onclick = function() {
-            changeViewedPlayer(player.id);
-            switchTab('album');
-          };
-
-          tr.innerHTML = `
-            <td class="p-4 font-bold text-slate-100 flex items-center gap-2">
-              ${player.id === window.localAuthPlayerId ? '<i class="fa-solid fa-star text-amber-400 text-xs"></i>' : ''}
-              ${player.name}
-            </td>
-            <td class="p-4 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <div class="w-20 bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div class="bg-amber-500 h-full transition-all duration-500" style="width: ${percent}%"></div>
-                </div>
-                <span class="text-xs font-semibold">${percent}%</span>
-              </div>
-            </td>
-            <td class="p-4 text-center font-bold text-slate-300">${missing}</td>
-            <td class="p-4 text-center font-bold text-purple-400">${duplicates}</td>
-            <td class="p-4 text-center font-bold text-amber-400">${goldObtained}/18 ★</td>
-            <td class="p-4 text-center">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-extrabold border transition ${sendBadgeStyle}">
-                <i class="fa-solid fa-paper-plane text-[10px]"></i> ${sends}/3
-              </span>
-            </td>
-            <td class="p-4 text-center text-xs text-slate-400 font-mono">${lastUp}</td>
-            <td class="p-4 text-right">
-              <button onclick="event.stopPropagation(); changeViewedPlayer('${player.id}'); switchTab('album');" class="text-xs px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition transform hover:scale-105 cursor-pointer">
-                Ver Álbum
-              </button>
-            </td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
-    }
-
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      const activeTab = document.getElementById(`tab-${tabId}`);
-      if (activeTab) activeTab.classList.remove('hidden');
-
-      const tabs = ['club', 'album', 'optimizer', 'chat', 'admin'];
-      tabs.forEach(t => {
-        const navBtn = document.getElementById(`nav-${t}`);
-        if (navBtn) {
-          navBtn.className = (t === tabId) 
-            ? 'px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 bg-slate-800 text-amber-400 border border-slate-700 font-bold'
-            : 'px-3 sm:px-4 py-2 rounded-lg transition-all transform hover:scale-105 text-slate-400 hover:text-slate-200 hover:bg-slate-800';
-        }
-
-        const mobileNavBtn = document.getElementById(`mobile-nav-${t}`);
-        if (mobileNavBtn) {
-          mobileNavBtn.className = (t === tabId) 
-            ? 'flex-1 flex flex-col items-center py-1 text-amber-400 font-bold transition-transform active:scale-95'
-            : 'flex-1 flex flex-col items-center py-1 text-slate-400 transition-transform active:scale-95';
-        }
-      });
-
-      if (tabId === 'optimizer') calculateOptimizations();
-      if (tabId === 'album') renderAlbumTab();
-      if (tabId === 'chat') renderChat();
-      if (tabId === 'admin') renderAdminTab();
-    }
-
-    function isCurrentAuthAdmin() {
-      const authUser = window.clubState.players ? window.clubState.players.find(p => p.id === window.localAuthPlayerId) : null;
-      return authUser && authUser.role === 'admin';
-    }
-
-    function renderAlbumTab() {
-      const viewedPlayer = window.clubState.players ? window.clubState.players.find(p => p.id === window.localViewPlayerId) : null;
-      if (!viewedPlayer) return;
-
-      const dict = translations[window.currentLang] || translations.es;
-      const isOwnerOrAdmin = (window.localAuthPlayerId === viewedPlayer.id) || isCurrentAuthAdmin();
-
-      document.getElementById('album-player-name').innerText = viewedPlayer.name;
-      
-      const btnEdit = document.getElementById('btn-album-edit-name');
-      const btnReset = document.getElementById('btn-album-reset');
-      const readOnlyBadge = document.getElementById('read-only-badge');
-      const instructionsContainer = document.getElementById('instructions-container');
-
-      if (!isOwnerOrAdmin) {
-        if (btnEdit) btnEdit.classList.add('hidden');
-        if (btnReset) btnReset.classList.add('hidden');
-        if (readOnlyBadge) readOnlyBadge.classList.remove('hidden');
-        if (instructionsContainer) instructionsContainer.classList.add('opacity-40');
-      } else {
-        if (btnEdit) btnEdit.classList.remove('hidden');
-        if (btnReset) btnReset.classList.remove('hidden');
-        if (readOnlyBadge) readOnlyBadge.classList.add('hidden');
-        if (instructionsContainer) instructionsContainer.classList.remove('opacity-40');
-      }
-
-      const lastUpBadge = document.getElementById('album-last-updated-badge');
-      if (lastUpBadge) lastUpBadge.innerText = `${dict.updated_label} ${viewedPlayer.lastUpdated || '---'}`;
-
-      let totalObtained = 0, totalDuplicates = 0, totalGoldObtained = 0;
-
-      if (viewedPlayer.album) {
-        viewedPlayer.album.forEach(setObj => {
-          setObj.cards.forEach((val, cIdx) => {
-            const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
-            if (isGold) {
-              if (val === 3) { totalObtained++; totalGoldObtained++; }
-            } else {
-              if (val >= 1) totalObtained++;
-              if (val === 2) totalDuplicates++;
-            }
-          });
-        });
-      }
-
-      document.getElementById('stat-obtained').innerText = `${totalObtained}/${TOTAL_CARDS}`;
-      document.getElementById('stat-duplicates').innerText = totalDuplicates;
-      document.getElementById('stat-gold').innerText = `${totalGoldObtained}/18`;
-      document.getElementById('stat-missing').innerText = TOTAL_CARDS - totalObtained;
-
-      const container = document.getElementById('album-sets-container');
-      if (!container) return;
+    function renderPractice() {
       container.innerHTML = '';
+      container.className = currentView === 'game' 
+        ? 'view-game grid grid-cols-3 gap-3 max-w-[280px] mx-auto' 
+        : 'view-classic grid grid-cols-9 gap-1 max-w-full mx-auto';
 
-      if (viewedPlayer.album) {
-        viewedPlayer.album.forEach(setObj => {
-          const setDiv = document.createElement('div');
-          setDiv.className = 'bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-md space-y-2 transition-all hover:border-slate-700';
+      cardsState.forEach((val, idx) => {
+        const isGold = (idx === 8); 
+        let statusClass = 'status-0';
+        let statusLabel = `${idx + 1}`;
+        let ribbonHTML = '';
 
-          let setObtained = 0;
-          setObj.cards.forEach((val, cIdx) => {
-            const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
-            if (isGold) { if (val === 3) setObtained++; }
-            else { if (val >= 1) setObtained++; }
-          });
-
-          const isComplete = (setObtained === CARDS_PER_SET);
-
-          let headerHTML = `
-            <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-              <h3 class="font-cinzel font-bold text-slate-200 text-xs sm:text-sm">${dict.card_set} ${setObj.setNumber}</h3>
-              ${isComplete 
-                ? `<span class="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1 shadow-sm"><i class="fa-solid fa-trophy text-amber-400"></i> ${dict.set_completed}</span>`
-                : `<span class="text-[10px] sm:text-xs text-slate-400 font-medium">${dict.th_missing} <strong class="text-slate-200">${CARDS_PER_SET - setObtained}</strong></span>`
-              }
-            </div>
-          `;
-
-          let gridHTML = '<div class="grid grid-cols-5 sm:grid-cols-9 gap-1.5 sm:gap-1 pt-1">';
-          setObj.cards.forEach((val, cIdx) => {
-            const isGold = isGoldCardSlot(setObj.setNumber, cIdx);
-            let statusClass = 'status-0';
-            let statusLabel = `${cIdx + 1}`;
-
-            if (isGold) {
-              statusClass = (val === 3) ? 'status-3 gold-slot-border font-extrabold' : 'status-0 gold-slot-border';
-              if (val === 3) statusLabel = `★`;
-            } else {
-              if (val === 1) statusClass = 'status-1 font-bold';
-              if (val === 2) statusClass = 'status-2 font-bold';
-            }
-
-            gridHTML += `
-              <button 
-                data-set="${setObj.setNumber}" data-card="${cIdx}"
-                class="card-btn card-touch-btn rounded-lg border flex flex-col items-center justify-center shadow-sm text-xs sm:text-[11px] font-black h-10 sm:h-9 w-full ${statusClass} ${!isOwnerOrAdmin ? 'cursor-not-allowed opacity-90' : 'cursor-pointer hover:brightness-110'}"
-              >
-                <span>${statusLabel}</span>
-              </button>
-            `;
-          });
-          gridHTML += '</div>';
-
-          setDiv.innerHTML = headerHTML + gridHTML;
-          container.appendChild(setDiv);
-        });
-      }
-
-      if (isOwnerOrAdmin) {
-        attachCardListeners();
-      }
-    }
-
-    function attachCardListeners() {
-      const cardBtns = document.querySelectorAll('.card-touch-btn');
-      cardBtns.forEach(btn => {
-        let pressTimer = null;
-        let isLongPress = false;
-
-        const setNum = parseInt(btn.getAttribute('data-set'), 10);
-        const cardIdx = parseInt(btn.getAttribute('data-card'), 10);
-
-        const startPress = (e) => {
-          isLongPress = false;
-          pressTimer = setTimeout(() => {
-            isLongPress = true;
-            handleCardLongPress(e, setNum, cardIdx);
-          }, 450);
-        };
-
-        const cancelPress = () => {
-          if (pressTimer) clearTimeout(pressTimer);
-        };
-
-        btn.addEventListener('touchstart', startPress, { passive: true });
-        btn.addEventListener('touchend', (e) => {
-          cancelPress();
-          if (isLongPress && e.cancelable) e.preventDefault();
-        });
-        btn.addEventListener('touchmove', cancelPress, { passive: true });
-
-        btn.addEventListener('mousedown', startPress);
-        btn.addEventListener('mouseup', cancelPress);
-        btn.addEventListener('mouseleave', cancelPress);
-
-        btn.addEventListener('click', (e) => {
-          if (!isLongPress) handleCardClick(setNum, cardIdx);
-        });
-
-        btn.addEventListener('contextmenu', (e) => {
-          e.preventDefault();
-          handleCardLongPress(e, setNum, cardIdx);
-        });
-      });
-    }
-
-    function handleCardClick(setNumber, cardIndex) {
-      const viewedPlayer = window.clubState.players.find(p => p.id === window.localViewPlayerId);
-      if (!viewedPlayer) return;
-
-      const setObj = viewedPlayer.album.find(s => s.setNumber === setNumber);
-      if (!setObj) return;
-
-      let prevObtained = 0;
-      setObj.cards.forEach((v, idx) => {
-        if (isGoldCardSlot(setNumber, idx)) { if (v === 3) prevObtained++; }
-        else { if (v >= 1) prevObtained++; }
-      });
-      const wasComplete = (prevObtained === CARDS_PER_SET);
-
-      const isGold = isGoldCardSlot(setNumber, cardIndex);
-      const currentVal = setObj.cards[cardIndex];
-
-      if (isGold) {
-        setObj.cards[cardIndex] = (currentVal === 3) ? 0 : 3;
-      } else {
-        if (currentVal === 0) setObj.cards[cardIndex] = 1;
-        else if (currentVal === 1) setObj.cards[cardIndex] = 2;
-        else if (currentVal === 2) setObj.cards[cardIndex] = 1;
-      }
-
-      viewedPlayer.lastUpdated = getFormattedTimestamp();
-
-      let postObtained = 0;
-      setObj.cards.forEach((v, idx) => {
-        if (isGoldCardSlot(setNumber, idx)) { if (v === 3) postObtained++; }
-        else { if (v >= 1) postObtained++; }
-      });
-      const isCompleteNow = (postObtained === CARDS_PER_SET);
-
-      let totalObtainedAlbum = 0;
-      viewedPlayer.album.forEach(s => {
-        s.cards.forEach((v, idx) => {
-          if (isGoldCardSlot(s.setNumber, idx)) { if (v === 3) totalObtainedAlbum++; }
-          else { if (v >= 1) totalObtainedAlbum++; }
-        });
-      });
-
-      if (totalObtainedAlbum === TOTAL_CARDS) {
-        triggerGrandAlbumCelebration(viewedPlayer.name);
-      } else if (!wasComplete && isCompleteNow && window.confetti) {
-        confetti({ particleCount: 75, spread: 80, origin: { y: 0.6 } });
-      }
-
-      if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      renderApp();
-    }
-
-    function handleCardLongPress(e, setNumber, cardIndex) {
-      if (e && e.preventDefault) e.preventDefault();
-      const viewedPlayer = window.clubState.players.find(p => p.id === window.localViewPlayerId);
-      if (!viewedPlayer) return;
-
-      const setObj = viewedPlayer.album.find(s => s.setNumber === setNumber);
-      if (setObj) {
-        setObj.cards[cardIndex] = 0;
-        viewedPlayer.lastUpdated = getFormattedTimestamp();
-        if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-        renderApp();
-      }
-    }
-
-    function triggerGrandAlbumCelebration(playerName) {
-      const modal = document.getElementById('modal-grand-celebration');
-      const nameEl = document.getElementById('celebration-player-name');
-      if (nameEl) nameEl.innerText = playerName;
-      if (modal) modal.classList.remove('hidden');
-
-      if (!window.confetti) return;
-      const duration = 3.5 * 1000;
-      const animationEnd = Date.now() + duration;
-
-      const interval = setInterval(function() {
-        const timeLeft = animationEnd - Date.now();
-        if (timeLeft <= 0) return clearInterval(interval);
-        confetti({
-          particleCount: 50 * (timeLeft / duration),
-          startVelocity: 30,
-          spread: 360,
-          origin: { x: Math.random(), y: Math.random() - 0.2 }
-        });
-      }, 250);
-    }
-
-    function closeGrandCelebration() {
-      const modal = document.getElementById('modal-grand-celebration');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function resetWholeAlbum() {
-      const viewedPlayer = window.clubState.players ? window.clubState.players.find(p => p.id === window.localViewPlayerId) : null;
-      if (!viewedPlayer) return;
-
-      if (confirm(`¿Estás seguro de que deseas reiniciar completamente el álbum de ${viewedPlayer.name}?`)) {
-        viewedPlayer.album = generateEmptyAlbum();
-        viewedPlayer.lastUpdated = getFormattedTimestamp();
-        if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-        renderApp();
-      }
-    }
-
-    function openRenameMemberModal() {
-      const viewedPlayer = window.clubState.players ? window.clubState.players.find(p => p.id === window.localViewPlayerId) : null;
-      if (!viewedPlayer) return;
-
-      const modal = document.getElementById('modal-rename-member');
-      const input = document.getElementById('rename-member-name-input');
-      const err = document.getElementById('modal-rename-error-msg');
-
-      if (input) input.value = viewedPlayer.name;
-      if (err) err.classList.add('hidden');
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeRenameMemberModal() {
-      const modal = document.getElementById('modal-rename-member');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function submitRenameMember() {
-      const viewedPlayer = window.clubState.players ? window.clubState.players.find(p => p.id === window.localViewPlayerId) : null;
-      if (!viewedPlayer) return;
-
-      const input = document.getElementById('rename-member-name-input');
-      const err = document.getElementById('modal-rename-error-msg');
-      const newName = input ? input.value.trim().toUpperCase() : '';
-
-      if (!newName) {
-        if (err) { err.innerText = "Escribe un nombre válido."; err.classList.remove('hidden'); }
-        return;
-      }
-
-      if (window.clubState.players.some(p => p.id !== viewedPlayer.id && p.name === newName)) {
-        if (err) { err.innerText = "Ya existe un usuario con este nombre."; err.classList.remove('hidden'); }
-        return;
-      }
-
-      viewedPlayer.name = newName;
-      viewedPlayer.lastUpdated = getFormattedTimestamp();
-
-      if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      closeRenameMemberModal();
-      renderApp();
-    }
-
-    // REGISTRO Y CREACIÓN DE USUARIOS
-    function openRegisterUserModal(isAdminCreating = false) {
-      const modal = document.getElementById('modal-register-user');
-      const roleToggle = document.getElementById('admin-role-toggle');
-      const err = document.getElementById('reg-error-msg');
-      
-      document.getElementById('reg-username').value = '';
-      document.getElementById('reg-pin').value = '';
-      if (err) err.classList.add('hidden');
-
-      if (roleToggle) {
-        if (isCurrentAuthAdmin()) {
-          roleToggle.classList.remove('hidden');
+        if (isGold) {
+          if (val === 3) { statusClass = 'status-3 gold-slot-border'; statusLabel = `★`; }
+          else { statusClass = 'status-0 gold-slot-border'; }
         } else {
-          roleToggle.classList.add('hidden');
-          const isAdminChk = document.getElementById('reg-is-admin');
-          if (isAdminChk) isAdminChk.checked = false;
+          if (val === 1) { statusClass = 'status-1'; }
+          else if (val >= 2) { statusClass = 'status-2'; ribbonHTML = `<div class="ribbon" data-ribbon="true"><span>+${val - 1}</span></div>`; }
         }
-      }
 
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeRegisterUserModal() {
-      const modal = document.getElementById('modal-register-user');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function submitRegisterUser() {
-      const nameInput = document.getElementById('reg-username');
-      const pinInput = document.getElementById('reg-pin');
-      const isAdminInput = document.getElementById('reg-is-admin');
-      const err = document.getElementById('reg-error-msg');
-
-      const name = nameInput ? nameInput.value.trim().toUpperCase() : '';
-      const pin = pinInput ? pinInput.value.trim() : '';
-
-      if (!name || !pin) {
-        if (err) { err.innerText = "Escribe un nombre y un PIN de seguridad."; err.classList.remove('hidden'); }
-        return;
-      }
-
-      if (!window.clubState.players) window.clubState.players = [];
-
-      if (window.clubState.players.some(p => p.name === name)) {
-        if (err) { err.innerText = "Ya existe un usuario con este nombre."; err.classList.remove('hidden'); }
-        return;
-      }
-
-      // Si la lista de jugadores está vacía, el primer usuario creado automáticamente es el ADMIN
-      const isFirstUser = window.clubState.players.length === 0;
-      const role = (isFirstUser || (isCurrentAuthAdmin() && isAdminInput && isAdminInput.checked)) ? 'admin' : 'member';
-
-      const newPlayer = {
-        id: 'p_' + Date.now(),
-        name: name,
-        pin: pin,
-        role: role,
-        sendsRemaining: 3,
-        lastUpdated: getFormattedTimestamp(),
-        album: generateEmptyAlbum()
-      };
-
-      window.clubState.players.push(newPlayer);
-
-      if (!isCurrentAuthAdmin() || isFirstUser) {
-        window.localAuthPlayerId = newPlayer.id;
-        localStorage.setItem('magos_famosos_auth_id', newPlayer.id);
-      }
-      window.localViewPlayerId = newPlayer.id;
-
-      if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      closeRegisterUserModal();
-      renderApp();
-    }
-
-    function openLoginUserModal() {
-      const modal = document.getElementById('modal-login-user');
-      const select = document.getElementById('login-user-select');
-      const err = document.getElementById('login-error-msg');
-
-      if (select) {
-        select.innerHTML = '';
-        if (window.clubState.players) {
-          window.clubState.players.forEach(p => {
-            const opt = document.createElement('option');
-            opt.value = p.id;
-            opt.textContent = p.name;
-            select.appendChild(opt);
-          });
-        }
-      }
-
-      document.getElementById('login-pin').value = '';
-      if (err) err.classList.add('hidden');
-      if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeLoginUserModal() {
-      const modal = document.getElementById('modal-login-user');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function submitLoginUser() {
-      const select = document.getElementById('login-user-select');
-      const pinInput = document.getElementById('login-pin');
-      const err = document.getElementById('login-error-msg');
-
-      const selectedId = select ? select.value : null;
-      const pin = pinInput ? pinInput.value.trim() : '';
-
-      const player = window.clubState.players ? window.clubState.players.find(p => p.id === selectedId) : null;
-
-      if (!player || player.pin !== pin) {
-        if (err) { err.innerText = "PIN incorrecto. Intenta de nuevo."; err.classList.remove('hidden'); }
-        return;
-      }
-
-      window.localAuthPlayerId = player.id;
-      window.localViewPlayerId = player.id;
-      localStorage.setItem('magos_famosos_auth_id', player.id);
-
-      closeLoginUserModal();
-      renderApp();
-    }
-
-    // CHAT MÁGICO
-    function renderChat() {
-      const container = document.getElementById('chat-messages-container');
-      const clearChatBtn = document.getElementById('admin-clear-chat-btn');
-      const input = document.getElementById('chat-input');
-      const sendBtn = document.getElementById('chat-send-btn');
-      const dict = translations[window.currentLang] || translations.es;
-
-      if (!container) return;
-
-      if (clearChatBtn) {
-        if (isCurrentAuthAdmin()) clearChatBtn.classList.remove('hidden');
-        else clearChatBtn.classList.add('hidden');
-      }
-
-      const isLoggedIn = !!window.localAuthPlayerId;
-
-      if (input) {
-        if (isLoggedIn) {
-          input.disabled = false;
-          input.placeholder = dict.chat_placeholder_logged;
-        } else {
-          input.disabled = true;
-          input.placeholder = dict.chat_placeholder_guest;
-        }
-      }
-
-      if (sendBtn) sendBtn.disabled = !isLoggedIn;
-
-      container.innerHTML = '';
-
-      const msgKeys = Object.keys(window.rawChatData || {});
-      if (msgKeys.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-8">${dict.chat_no_messages}</p>`;
-        return;
-      }
-
-      msgKeys.forEach(key => {
-        const msg = window.rawChatData[key];
-        const isMe = msg.senderId === window.localAuthPlayerId;
         const div = document.createElement('div');
-        div.className = `flex flex-col chat-msg-animate ${isMe ? 'items-end' : 'items-start'}`;
-
-        let deleteBtnHTML = '';
-        if (isCurrentAuthAdmin()) {
-          deleteBtnHTML = `<button onclick="deleteSingleChatMessage('${key}')" class="ml-2 text-slate-500 hover:text-red-400 text-[10px] cursor-pointer transition" title="Borrar mensaje"><i class="fa-solid fa-trash"></i></button>`;
-        }
-
-        div.innerHTML = `
-          <div class="text-[10px] text-slate-400 font-semibold mb-0.5 px-1 flex items-center">
-            <span>${msg.senderName} • <span class="font-mono text-slate-500">${msg.timestamp}</span></span>
-            ${deleteBtnHTML}
-          </div>
-          <div class="px-3.5 py-2 rounded-2xl max-w-[85%] text-xs sm:text-sm font-medium shadow-md ${isMe ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-slate-800 text-slate-100 rounded-tl-none border border-slate-700'}">
-            ${msg.text}
-          </div>
-        `;
+        div.className = `card-slot rounded-lg border flex flex-col items-center justify-center font-black relative ${statusClass}`;
+        div.dataset.idx = idx;
+        div.dataset.key = `demo-${idx}`;
+        div.innerHTML = `<span>${statusLabel}</span>${ribbonHTML}`;
         container.appendChild(div);
       });
-
-      container.scrollTop = container.scrollHeight;
     }
 
-    function sendChatMessage(e) {
-      if (e) e.preventDefault();
-      const dict = translations[window.currentLang] || translations.es;
+    function toggleView() {
+      currentView = currentView === 'game' ? 'classic' : 'game';
+      renderPractice();
+    }
 
-      if (!window.localAuthPlayerId) {
-        alert(dict.chat_guest_notice);
-        openLoginUserModal();
+    function resetDemoSet() {
+      cardsState.fill(0);
+      renderPractice();
+    }
+
+    function updateCardDOM(idx) {
+      const val = cardsState[idx];
+      const el = container.children[idx];
+      if (!el) return;
+      
+      const isGold = (idx === 8);
+      let statusClass = 'status-0';
+      let statusLabel = `${idx + 1}`;
+      let ribbonHTML = '';
+
+      if (isGold) {
+        if (val === 3) { statusClass = 'status-3 gold-slot-border'; statusLabel = `★`; }
+        else { statusClass = 'status-0 gold-slot-border'; }
+      } else {
+        if (val === 1) { statusClass = 'status-1'; }
+        else if (val >= 2) { statusClass = 'status-2'; ribbonHTML = `<div class="ribbon" data-ribbon="true"><span>+${val - 1}</span></div>`; }
+      }
+
+      el.className = `card-slot rounded-lg border flex flex-col items-center justify-center font-black relative ${statusClass}`;
+      el.innerHTML = `<span>${statusLabel}</span>${ribbonHTML}`;
+    }
+
+    // Lógica de Interacción
+    container.addEventListener('pointerdown', (e) => {
+      if (e.button === 2) return;
+      const card = e.target.closest('.card-slot');
+      if (!card) return;
+      
+      pointerDownActive = true;
+      touchStartX = e.clientX;
+      touchStartY = e.clientY;
+      startCardIdx = parseInt(card.dataset.idx, 10);
+      
+      isScrolling = false;
+      isDragging = false;
+      isLongPressAction = false;
+      dragPath = [];
+      initialStatesMap = {};
+
+      const ribbon = e.target.closest('.ribbon');
+      if (ribbon) ribbon.classList.add('is-touched');
+      else card.classList.add('is-touched');
+
+      if (longPressTimer) clearTimeout(longPressTimer);
+      longPressTimer = setTimeout(() => {
+        if (pointerDownActive && !isScrolling && !isDragging) {
+          isLongPressAction = true;
+          cardsState[startCardIdx] = 0;
+          updateCardDOM(startCardIdx);
+          if (navigator.vibrate) navigator.vibrate(50);
+        }
+      }, LONG_PRESS_MS);
+
+      try { container.setPointerCapture(e.pointerId); } catch(err) {}
+    });
+
+    container.addEventListener('pointermove', (e) => {
+      if (!pointerDownActive) return;
+      if (isScrolling) return;
+      if (isLongPressAction) return;
+
+      const deltaX = e.clientX - touchStartX;
+      const deltaY = e.clientY - touchStartY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+
+      if (!isDragging && !isScrolling) {
+        if (absX < MOVE_THRESHOLD && absY < MOVE_THRESHOLD) return;
+        
+        if (absY > absX) {
+          isScrolling = true;
+          if (longPressTimer) clearTimeout(longPressTimer);
+          document.querySelectorAll('.is-touched').forEach(el => el.classList.remove('is-touched'));
+          return;
+        }
+
+        isDragging = true;
+        if (longPressTimer) clearTimeout(longPressTimer);
+        document.querySelectorAll('.is-touched').forEach(el => el.classList.remove('is-touched'));
+
+        const isGold = (startCardIdx === 8);
+        if (isGold) {
+          initialStatesMap[startCardIdx] = cardsState[startCardIdx];
+          cardsState[startCardIdx] = (cardsState[startCardIdx] === 3) ? 0 : 3;
+        } else {
+          initialStatesMap[startCardIdx] = cardsState[startCardIdx];
+          cardsState[startCardIdx] = cardsState[startCardIdx] + 1;
+        }
+        dragPath.push(startCardIdx);
+        updateCardDOM(startCardIdx);
+      }
+
+      if (!isDragging) return;
+
+      const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+      const card = targetEl?.closest('.card-slot');
+      if (!card) return;
+      
+      const idx = parseInt(card.dataset.idx, 10);
+      if (dragPath.includes(idx)) return; 
+
+      const isGold = (idx === 8);
+      if (isGold) {
+        initialStatesMap[idx] = cardsState[idx];
+        cardsState[idx] = (cardsState[idx] === 3) ? 0 : 3;
+      } else {
+        initialStatesMap[idx] = cardsState[idx];
+        cardsState[idx] = cardsState[idx] + 1;
+      }
+      dragPath.push(idx);
+      updateCardDOM(idx);
+    });
+
+    container.addEventListener('pointerup', (e) => {
+      if (!pointerDownActive) return;
+      const wasPointerDown = pointerDownActive;
+      pointerDownActive = false;
+      
+      if (longPressTimer) clearTimeout(longPressTimer);
+      try { container.releasePointerCapture(e.pointerId); } catch(err) {}
+
+      document.querySelectorAll('.is-touched').forEach(el => el.classList.remove('is-touched'));
+
+      if (isScrolling || isLongPressAction) {
+        isScrolling = false;
+        isLongPressAction = false;
         return;
       }
 
-      const input = document.getElementById('chat-input');
-      const text = input ? input.value.trim() : '';
-      if (!text) return;
-
-      const authUser = window.clubState.players ? window.clubState.players.find(p => p.id === window.localAuthPlayerId) : null;
-      if (!authUser) return;
-
-      const msgObj = {
-        senderId: window.localAuthPlayerId,
-        senderName: authUser.name,
-        text: text,
-        timestamp: getFormattedTimestamp()
-      };
-
-      if (typeof window.sendChatMessageToCloud === 'function') {
-        window.sendChatMessageToCloud(msgObj);
+      if (isDragging) {
+        isDragging = false;
+        return;
       }
 
-      input.value = '';
-    }
-
-    function deleteSingleChatMessage(msgKey) {
-      if (isCurrentAuthAdmin() && typeof window.deleteChatMessageFromCloud === 'function') {
-        window.deleteChatMessageFromCloud(msgKey);
-      }
-    }
-
-    function clearFullChatPrompt() {
-      if (isCurrentAuthAdmin() && confirm("¿Deseas vaciar completamente el historial del chat?")) {
-        if (typeof window.clearAllChatFromCloud === 'function') {
-          window.clearAllChatFromCloud();
+      if (wasPointerDown) {
+        const clickedElement = document.elementFromPoint(e.clientX, e.clientY);
+        const isRibbon = clickedElement?.closest('.ribbon');
+        
+        if (isRibbon) {
+          if (cardsState[startCardIdx] > 1) {
+            cardsState[startCardIdx]--;
+            updateCardDOM(startCardIdx);
+          }
+        } else {
+          const isGold = (startCardIdx === 8);
+          if (isGold) {
+            cardsState[startCardIdx] = (cardsState[startCardIdx] === 3) ? 0 : 3;
+          } else {
+            cardsState[startCardIdx]++;
+          }
+          updateCardDOM(startCardIdx);
         }
       }
-    }
+    });
 
-    // OPTIMIZADOR
-    function updateOptimizerFilterOptions() {
-      const filterSelect = document.getElementById('optimizer-sender-filter');
-      if (!filterSelect) return;
-      const currentVal = filterSelect.value || 'ALL';
-      const dict = translations[window.currentLang] || translations.es;
+    container.addEventListener('pointercancel', () => {
+      pointerDownActive = false;
+      if (longPressTimer) clearTimeout(longPressTimer);
+      document.querySelectorAll('.is-touched').forEach(el => el.classList.remove('is-touched'));
+    });
 
-      filterSelect.innerHTML = `<option value="ALL">${dict.global_all}</option>`;
+    container.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const card = e.target.closest('.card-slot');
+      if (!card) return;
+      const idx = parseInt(card.dataset.idx, 10);
+      cardsState[idx] = 0;
+      updateCardDOM(idx);
+    });
 
-      if (window.clubState.players) {
-        window.clubState.players.forEach(p => {
-          const opt = document.createElement('option');
-          opt.value = p.id;
-          opt.textContent = `${dict.only_from} ${p.name}`;
-          filterSelect.appendChild(opt);
-        });
-      }
+    renderPractice();
 
-      filterSelect.value = currentVal;
-    }
-
-    function calculateOptimizations() {
-      const outgoingContainer = document.getElementById('outgoing-recommendations');
-      const filterSelect = document.getElementById('optimizer-sender-filter');
-      const filterVal = filterSelect ? filterSelect.value : 'ALL';
-      const dict = translations[window.currentLang] || translations.es;
-
-      if (!outgoingContainer) return;
-      outgoingContainer.innerHTML = '';
-
-      if (!window.clubState.players || window.clubState.players.length === 0) {
-        outgoingContainer.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center text-slate-400 text-xs sm:text-sm">${dict.no_suggestions}</div>`;
-        return;
-      }
-
-      let sendersList = window.clubState.players;
-      if (filterVal !== 'ALL') sendersList = window.clubState.players.filter(p => p.id === filterVal);
-
-      const globalMatches = [];
-
-      sendersList.forEach(sender => {
-        const senderSendsLeft = sender.sendsRemaining ?? 3;
-
-        if (sender.album) {
-          sender.album.forEach(setObj => {
-            setObj.cards.forEach((val, cIdx) => {
-              if (!isGoldCardSlot(setObj.setNumber, cIdx) && val === 2) {
-
-                window.clubState.players.forEach(receiver => {
-                  if (receiver.id === sender.id) return;
-
-                  const receiverSet = receiver.album ? receiver.album.find(s => s.setNumber === setObj.setNumber) : null;
-                  if (receiverSet && receiverSet.cards[cIdx] === 0) {
-
-                    let missingInSet = 0;
-                    receiverSet.cards.forEach((rv, rIdx) => {
-                      const isGold = isGoldCardSlot(setObj.setNumber, rIdx);
-                      if ((isGold && rv !== 3) || (!isGold && rv === 0)) missingInSet++;
-                    });
-
-                    let receiverTotalMissing = 0;
-                    if (receiver.album) {
-                      receiver.album.forEach(sObj => {
-                        sObj.cards.forEach((rv, rIdx) => {
-                          const isGold = isGoldCardSlot(sObj.setNumber, rIdx);
-                          if ((isGold && rv !== 3) || (!isGold && rv === 0)) receiverTotalMissing++;
-                        });
-                      });
-                    }
-
-                    globalMatches.push({
-                      sender: sender,
-                      senderSendsLeft: senderSendsLeft,
-                      receiver: receiver,
-                      setNumber: setObj.setNumber,
-                      cardIndex: cIdx,
-                      missingInSet: missingInSet,
-                      receiverTotalMissing: receiverTotalMissing
-                    });
-                  }
-                });
-
-              }
-            });
-          });
-        }
-      });
-
-      globalMatches.sort((a, b) => {
-        if (a.missingInSet !== b.missingInSet) return a.missingInSet - b.missingInSet;
-        return a.receiverTotalMissing - b.receiverTotalMissing;
-      });
-
-      if (globalMatches.length === 0) {
-        outgoingContainer.innerHTML = `<div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 text-center text-slate-400 text-xs sm:text-sm"><i class="fa-solid fa-circle-info text-amber-400 text-lg mb-2 block"></i>${dict.no_suggestions}</div>`;
-        return;
-      }
-
-      globalMatches.slice(0, 12).forEach(match => {
-        const cardNum = match.cardIndex + 1;
-        const div = document.createElement('div');
-        const isSetClosing = match.missingInSet <= 1;
-
-        div.className = `bg-slate-900 border ${isSetClosing ? 'border-amber-500/40 shadow-amber-500/10' : 'border-slate-800'} rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg transition-all hover:border-slate-700 hover:scale-[1.005]`;
-
-        div.innerHTML = `
-          <div class="space-y-1.5 flex-1">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="font-extrabold text-purple-300 bg-purple-950/80 px-3 py-1 rounded-lg border border-purple-500/40 text-xs flex items-center gap-1.5 shadow-sm">
-                <i class="fa-solid fa-paper-plane text-purple-400 text-[10px]"></i> ${match.sender.name}
-              </span>
-              
-              <span class="text-amber-400 font-black text-sm">➔</span>
-
-              <span class="font-extrabold text-emerald-300 bg-emerald-950/80 px-3 py-1 rounded-lg border border-emerald-500/40 text-xs flex items-center gap-1.5 shadow-sm">
-                <i class="fa-solid fa-user-check text-emerald-400 text-[10px]"></i> ${match.receiver.name}
-              </span>
-
-              ${isSetClosing ? `<span class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse"><i class="fa-solid fa-crown text-amber-400"></i> ${dict.almost_closed}</span>` : ''}
-            </div>
-
-            <div class="text-xs text-slate-300 font-semibold pt-1">
-              Cromo: <strong class="text-amber-300 font-bold">${dict.card_set} ${match.setNumber} • ${dict.card_num} #${cardNum}</strong>
-            </div>
-
-            <div class="text-[11px] text-slate-400 flex items-center gap-3 flex-wrap">
-              <span>${dict.missing_in_set} <strong class="text-slate-200">${match.missingInSet}</strong> ${dict.missing_in_set_tail}</span>
-              <span>•</span>
-              <span>${dict.global_missing} ${match.receiver.name}: <strong class="text-slate-200">${match.receiverTotalMissing}</strong></span>
-            </div>
-          </div>
-
-          <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-800">
-            <span class="text-[11px] px-2.5 py-1 rounded-lg border font-bold ${getSendBadgeClass(match.senderSendsLeft)}">
-              ${dict.sends}: ${match.senderSendsLeft}/3
-            </span>
-
-            <button onclick="registerSend('${match.sender.id}')" ${match.senderSendsLeft <= 0 ? 'disabled' : ''} class="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 disabled:opacity-40 text-white font-bold rounded-xl text-xs transition-all transform hover:scale-105 flex items-center gap-1.5 shadow-md cursor-pointer">
-              <i class="fa-solid fa-paper-plane"></i> ${dict.register_send}
-            </button>
-          </div>
-        `;
-        outgoingContainer.appendChild(div);
-      });
-    }
-
-    function registerSend(senderId) {
-      if (!window.localAuthPlayerId) {
-        openLoginUserModal();
-        return;
-      }
-
-      if (window.localAuthPlayerId !== senderId && !isCurrentAuthAdmin()) {
-        alert("Solo puedes registrar envíos desde tu propia cuenta iniciada.");
-        return;
-      }
-
-      const player = window.clubState.players.find(p => p.id === senderId);
-      if (!player || (player.sendsRemaining ?? 3) <= 0) return;
-
-      player.sendsRemaining = (player.sendsRemaining ?? 3) - 1;
-      player.lastUpdated = getFormattedTimestamp();
-
-      if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      renderApp();
-    }
-
-    // ADMINISTRACIÓN
-    function renderAdminTab() {
-      const list = document.getElementById('admin-members-list');
-      const adminAddBtn = document.getElementById('admin-add-user-top-btn');
-      const dict = translations[window.currentLang] || translations.es;
-      if (!list) return;
-      list.innerHTML = '';
-
-      if (!isCurrentAuthAdmin()) {
-        if (adminAddBtn) adminAddBtn.classList.add('hidden');
-        list.innerHTML = `<div class="col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-6 text-center text-slate-400 text-xs sm:text-sm"><i class="fa-solid fa-lock text-amber-400 text-lg mb-2 block"></i>${dict.admin_access_restricted}</div>`;
-        return;
-      }
-
-      if (adminAddBtn) adminAddBtn.classList.remove('hidden');
-
-      if (window.clubState.players) {
-        window.clubState.players.forEach(player => {
-          const sends = player.sendsRemaining ?? 3;
-          const sendBadgeStyle = getSendBadgeClass(sends);
-
-          const div = document.createElement('div');
-          div.className = 'bg-slate-950 border border-slate-800 rounded-xl p-3 flex items-center justify-between text-xs gap-2 transition hover:border-slate-700';
-
-          div.innerHTML = `
-            <div class="space-y-0.5 truncate">
-              <div class="font-bold text-slate-200 flex items-center gap-1.5 truncate">
-                <i class="fa-solid fa-user ${player.role === 'admin' ? 'text-amber-400' : 'text-slate-500'}"></i> ${player.name}
-                <button onclick="togglePlayerRole('${player.id}')" class="text-[9px] px-1.5 py-0.2 rounded border transition cursor-pointer ${player.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border-amber-500/30 hover:bg-amber-500/30' : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'}">
-                  ${player.role === 'admin' ? 'ADMIN' : 'MIEMBRO'}
-                </button>
-              </div>
-              <div class="text-[10px] text-slate-500 font-mono truncate">
-                Act: ${player.lastUpdated || '---'}
-              </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-              <div class="flex items-center gap-1 border px-2 py-1 rounded-lg ${sendBadgeStyle}">
-                <span class="text-[11px] font-medium">${dict.sends}:</span>
-                <strong class="font-bold text-[11px]">${sends}/3</strong>
-                <button onclick="resetPlayerSends('${player.id}')" title="Restablecer a 3/3" class="ml-1 opacity-80 hover:opacity-100 transition transform hover:rotate-180 cursor-pointer">
-                  <i class="fa-solid fa-rotate"></i>
-                </button>
-              </div>
-
-              <button onclick="deletePlayerPrompt('${player.id}')" class="p-2 bg-red-950/40 hover:bg-red-900/60 text-red-400 rounded-lg border border-red-800 transition transform hover:scale-105 cursor-pointer">
-                <i class="fa-solid fa-trash-can"></i>
-              </button>
-            </div>
-          `;
-          list.appendChild(div);
-        });
-      }
-    }
-
-    function togglePlayerRole(playerId) {
-      if (!isCurrentAuthAdmin()) return;
-      const player = window.clubState.players.find(p => p.id === playerId);
-      if (player) {
-        player.role = (player.role === 'admin') ? 'member' : 'admin';
-        if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-        renderApp();
-      }
-    }
-
-    function resetPlayerSends(playerId) {
-      if (!isCurrentAuthAdmin()) return;
-      const player = window.clubState.players.find(p => p.id === playerId);
-      if (player) {
-        player.sendsRemaining = 3;
-        player.lastUpdated = getFormattedTimestamp();
-        if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-        renderApp();
-      }
-    }
-
-    function deletePlayerPrompt(playerId) {
-      if (!isCurrentAuthAdmin()) return;
-      if (window.clubState.players.length <= 1) return;
-      window.clubState.players = window.clubState.players.filter(p => p.id !== playerId);
-      if (window.localAuthPlayerId === playerId) {
-        window.localAuthPlayerId = null;
-        localStorage.removeItem('magos_famosos_auth_id');
-      }
-      if (typeof window.saveStateToCloud === 'function') window.saveStateToCloud();
-      renderApp();
-    }
   </script>
 </body>
 </html>
